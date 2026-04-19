@@ -1,0 +1,570 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		06CEB904177F9FB979E6B8D9 /* ScreenCaptureKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 69B3DA44920BD585F6CD27BA /* ScreenCaptureKit.framework */; };
+		07EA9CFABF45015616ED80C0 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B12C11FEB5EEF0897A52410 /* AppKit.framework */; };
+		08C512DB34E11886685A143B /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21C0EBD2616116FE28CC5D2 /* AppError.swift */; };
+		0D028EDC70EF89EC96DFF228 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA1A2971FB7EBBDC5EC0E0C /* AppSettings.swift */; };
+		229CC0B8919904ACE208C207 /* ProjectLayoutSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38FAB7026302FFD4A50EF1CA /* ProjectLayoutSmokeTests.swift */; };
+		389BF1DC7E26AA15F0159C12 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E5CC6D7BECF724022286BD33 /* SwiftUI.framework */; };
+		3F13C166A9E24EDF78AC1EA0 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8742B58625B52C034F4A96B /* AppViewModel.swift */; };
+		51459371461707972A1EB0F5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27A936306FE54487F54430C3 /* ContentView.swift */; };
+		57F4A2E3BC8ECCAE6350135A /* OverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752C97AAE95423884454C454 /* OverlayView.swift */; };
+		59B61F395DDD89270F679856 /* AppSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0161E0C288FCF4E3EF8D2011 /* AppSettingsStore.swift */; };
+		5B46E454D3808F37AC1EAAA5 /* CaptionPipelineServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCBC9B238578CBA1E5144B2F /* CaptionPipelineServiceTests.swift */; };
+		5BD16EFE6E72C80C5748596D /* AppleTranslationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F4FA7300C9B4E7309482F9 /* AppleTranslationService.swift */; };
+		5DE6A201CE665167AD899009 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8127D0B893598B9A1B6D20C4 /* AVFoundation.framework */; };
+		5FAF9F05D761FD5BF248CE60 /* TranscriptEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A61919F8E76E230B99E3FA /* TranscriptEvent.swift */; };
+		70B11130965EB2C4F7633B57 /* CaptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B342F97272F27AF47BB56126 /* CaptionStore.swift */; };
+		74E7A8D6C55768F4F0CFC90B /* CaptionPipelineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A642FD2CF7ED4966BCAA031C /* CaptionPipelineService.swift */; };
+		83E9348010A414C26C23EB1D /* OverlayViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2792A1A45348F3E46210352 /* OverlayViewModelTests.swift */; };
+		8403FC3E19B09B99C9538CD1 /* AppSettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A25E099F0B0DC8A0F44ADFF1 /* AppSettingsStoreTests.swift */; };
+		89E5B6C1B27886DD0A0F750A /* CoreModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC73325855F9A4C4C32CA986 /* CoreModelTests.swift */; };
+		9081D0E9352882C6EDA24B3B /* SystemAudioCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026442E2D795C78D40637E8B /* SystemAudioCaptureService.swift */; };
+		9B7D43BA726AAEC4B00CCADE /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 164E9AEA6617B05856B62EF2 /* AppState.swift */; };
+		A04C1AD136E8807A7BB1D955 /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C6DFD9D8D5FE1D02FA51A4 /* Placeholder.swift */; };
+		A354C77F13351925CE2C8A16 /* Translation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B925EAC091CA5C8DD3F459A8 /* Translation.framework */; };
+		A444EDF684D46E5804ADE7C0 /* CaptureTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 697592E2C8839C961577703E /* CaptureTarget.swift */; };
+		ABB449DB40CF40642108505C /* AudioBufferConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 921CCD00DDA00FF51AB51307 /* AudioBufferConverter.swift */; };
+		B2DF83AE57B66432FA7F9631 /* CaptionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6015E425EFD2B7B6CCBA255 /* CaptionStoreTests.swift */; };
+		B334009DBB67F3FFF1D4DE0D /* LiveTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD24B2BFCBBF21468D84169E /* LiveTranscriptionService.swift */; };
+		B88420E0AD606F6BD895BE60 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5CF7EE8B2AD37AAB43D3AFA7 /* Assets.xcassets */; };
+		C07FE05508822CBEDF8C15C8 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D909DACBBE0C19CDEDBEC02 /* Cocoa.framework */; };
+		C5744A827009659CBA23CC98 /* CaptionLanguagePair.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95E2C7660CB402B13D6B788B /* CaptionLanguagePair.swift */; };
+		D62DC38AA29A762D79548934 /* MeetingCaptionTranslatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F32FAD619637320F7252DF /* MeetingCaptionTranslatorApp.swift */; };
+		DD80F795F3C543F36FDF6F42 /* Speech.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4DB41A17E1647570A31F268B /* Speech.framework */; };
+		E487AC0E0F50917469F0DD74 /* PermissionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56464F0D2736952C1C304E9D /* PermissionService.swift */; };
+		E79FFAEAAED480180792D3AA /* OverlayWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94767F992A8F8EBC0D5D3F21 /* OverlayWindowManager.swift */; };
+		E9CFE88A9E180680FF3CD827 /* CaptionLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F6079090A0E4F96B08A179B /* CaptionLine.swift */; };
+		F254309FC490188D615B5D8C /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2D909DACBBE0C19CDEDBEC02 /* Cocoa.framework */; };
+		F6577C17CAD94727CEC0A8D8 /* OverlayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C308752F1045D15A8C81F213 /* OverlayViewModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0B7EC6D716CECA8760E6AFAA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F7FE810226581B9A140D558E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3BE8552AE6CA6B586D70019C;
+			remoteInfo = MeetingCaptionTranslator;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		00F32FAD619637320F7252DF /* MeetingCaptionTranslatorApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MeetingCaptionTranslatorApp.swift; path = App/MeetingCaptionTranslatorApp.swift; sourceTree = "<group>"; };
+		0161E0C288FCF4E3EF8D2011 /* AppSettingsStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppSettingsStore.swift; path = Services/Persistence/AppSettingsStore.swift; sourceTree = "<group>"; };
+		026442E2D795C78D40637E8B /* SystemAudioCaptureService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SystemAudioCaptureService.swift; path = Services/Capture/SystemAudioCaptureService.swift; sourceTree = "<group>"; };
+		164E9AEA6617B05856B62EF2 /* AppState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppState.swift; path = App/AppState.swift; sourceTree = "<group>"; };
+		1C55FCEBFB5855B143F69A34 /* MeetingCaptionTranslator.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = MeetingCaptionTranslator.entitlements; path = Resources/MeetingCaptionTranslator.entitlements; sourceTree = "<group>"; };
+		1E234EBFD5DC53F8510FEA40 /* MeetingCaptionTranslator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeetingCaptionTranslator.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		21C723934F1F4CDF4350286E /* MeetingCaptionTranslatorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeetingCaptionTranslatorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		27A936306FE54487F54430C3 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = App/ContentView.swift; sourceTree = "<group>"; };
+		2D909DACBBE0C19CDEDBEC02 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		30C6DFD9D8D5FE1D02FA51A4 /* Placeholder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Placeholder.swift; sourceTree = "<group>"; };
+		38FAB7026302FFD4A50EF1CA /* ProjectLayoutSmokeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectLayoutSmokeTests.swift; sourceTree = "<group>"; };
+		4DB41A17E1647570A31F268B /* Speech.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Speech.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Speech.framework; sourceTree = DEVELOPER_DIR; };
+		56464F0D2736952C1C304E9D /* PermissionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PermissionService.swift; path = Services/Permissions/PermissionService.swift; sourceTree = "<group>"; };
+		5B12C11FEB5EEF0897A52410 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/AppKit.framework; sourceTree = DEVELOPER_DIR; };
+		5CF7EE8B2AD37AAB43D3AFA7 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Resources/Assets.xcassets; sourceTree = "<group>"; };
+		64347B0838021C14AAD0D1FE /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
+		697592E2C8839C961577703E /* CaptureTarget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CaptureTarget.swift; path = Models/CaptureTarget.swift; sourceTree = "<group>"; };
+		69B3DA44920BD585F6CD27BA /* ScreenCaptureKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScreenCaptureKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/ScreenCaptureKit.framework; sourceTree = DEVELOPER_DIR; };
+		6F6079090A0E4F96B08A179B /* CaptionLine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CaptionLine.swift; path = Models/CaptionLine.swift; sourceTree = "<group>"; };
+		752C97AAE95423884454C454 /* OverlayView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OverlayView.swift; path = Views/OverlayView.swift; sourceTree = "<group>"; };
+		8127D0B893598B9A1B6D20C4 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/AVFoundation.framework; sourceTree = DEVELOPER_DIR; };
+		921CCD00DDA00FF51AB51307 /* AudioBufferConverter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AudioBufferConverter.swift; path = Services/Audio/AudioBufferConverter.swift; sourceTree = "<group>"; };
+		94767F992A8F8EBC0D5D3F21 /* OverlayWindowManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OverlayWindowManager.swift; path = Infrastructure/OverlayWindowManager.swift; sourceTree = "<group>"; };
+		95E2C7660CB402B13D6B788B /* CaptionLanguagePair.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CaptionLanguagePair.swift; path = App/CaptionLanguagePair.swift; sourceTree = "<group>"; };
+		A25E099F0B0DC8A0F44ADFF1 /* AppSettingsStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppSettingsStoreTests.swift; sourceTree = "<group>"; };
+		A2792A1A45348F3E46210352 /* OverlayViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OverlayViewModelTests.swift; sourceTree = "<group>"; };
+		A6015E425EFD2B7B6CCBA255 /* CaptionStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CaptionStoreTests.swift; sourceTree = "<group>"; };
+		A642FD2CF7ED4966BCAA031C /* CaptionPipelineService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CaptionPipelineService.swift; path = Services/Caption/CaptionPipelineService.swift; sourceTree = "<group>"; };
+		ABA1A2971FB7EBBDC5EC0E0C /* AppSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppSettings.swift; path = Models/AppSettings.swift; sourceTree = "<group>"; };
+		B342F97272F27AF47BB56126 /* CaptionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CaptionStore.swift; path = Services/Caption/CaptionStore.swift; sourceTree = "<group>"; };
+		B6A61919F8E76E230B99E3FA /* TranscriptEvent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TranscriptEvent.swift; path = Models/TranscriptEvent.swift; sourceTree = "<group>"; };
+		B8742B58625B52C034F4A96B /* AppViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppViewModel.swift; path = ViewModels/AppViewModel.swift; sourceTree = "<group>"; };
+		B925EAC091CA5C8DD3F459A8 /* Translation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Translation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Translation.framework; sourceTree = DEVELOPER_DIR; };
+		BD24B2BFCBBF21468D84169E /* LiveTranscriptionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LiveTranscriptionService.swift; path = Services/Speech/LiveTranscriptionService.swift; sourceTree = "<group>"; };
+		C0F4FA7300C9B4E7309482F9 /* AppleTranslationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppleTranslationService.swift; path = Services/Translation/AppleTranslationService.swift; sourceTree = "<group>"; };
+		C308752F1045D15A8C81F213 /* OverlayViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OverlayViewModel.swift; path = ViewModels/OverlayViewModel.swift; sourceTree = "<group>"; };
+		CCBC9B238578CBA1E5144B2F /* CaptionPipelineServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CaptionPipelineServiceTests.swift; sourceTree = "<group>"; };
+		D21C0EBD2616116FE28CC5D2 /* AppError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppError.swift; path = Models/AppError.swift; sourceTree = "<group>"; };
+		DC73325855F9A4C4C32CA986 /* CoreModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreModelTests.swift; sourceTree = "<group>"; };
+		E5CC6D7BECF724022286BD33 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/SwiftUI.framework; sourceTree = DEVELOPER_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5C102079D70D92B4CC5A6A58 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C07FE05508822CBEDF8C15C8 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EBF426786B500976FE147081 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F254309FC490188D615B5D8C /* Cocoa.framework in Frameworks */,
+				07EA9CFABF45015616ED80C0 /* AppKit.framework in Frameworks */,
+				5DE6A201CE665167AD899009 /* AVFoundation.framework in Frameworks */,
+				06CEB904177F9FB979E6B8D9 /* ScreenCaptureKit.framework in Frameworks */,
+				DD80F795F3C543F36FDF6F42 /* Speech.framework in Frameworks */,
+				A354C77F13351925CE2C8A16 /* Translation.framework in Frameworks */,
+				389BF1DC7E26AA15F0159C12 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		312B7099C749C73E799727F2 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				2D909DACBBE0C19CDEDBEC02 /* Cocoa.framework */,
+				5B12C11FEB5EEF0897A52410 /* AppKit.framework */,
+				8127D0B893598B9A1B6D20C4 /* AVFoundation.framework */,
+				69B3DA44920BD585F6CD27BA /* ScreenCaptureKit.framework */,
+				4DB41A17E1647570A31F268B /* Speech.framework */,
+				B925EAC091CA5C8DD3F459A8 /* Translation.framework */,
+				E5CC6D7BECF724022286BD33 /* SwiftUI.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
+		34B09681B9E0C0A1621510FC /* MeetingCaptionTranslatorTests */ = {
+			isa = PBXGroup;
+			children = (
+				A25E099F0B0DC8A0F44ADFF1 /* AppSettingsStoreTests.swift */,
+				CCBC9B238578CBA1E5144B2F /* CaptionPipelineServiceTests.swift */,
+				A6015E425EFD2B7B6CCBA255 /* CaptionStoreTests.swift */,
+				DC73325855F9A4C4C32CA986 /* CoreModelTests.swift */,
+				A2792A1A45348F3E46210352 /* OverlayViewModelTests.swift */,
+				30C6DFD9D8D5FE1D02FA51A4 /* Placeholder.swift */,
+				38FAB7026302FFD4A50EF1CA /* ProjectLayoutSmokeTests.swift */,
+			);
+			name = MeetingCaptionTranslatorTests;
+			path = MeetingCaptionTranslatorTests;
+			sourceTree = "<group>";
+		};
+		85E0AD29540ECC41A948A857 = {
+			isa = PBXGroup;
+			children = (
+				AEF2EDC9792E30630F0592D1 /* Products */,
+				8AA159F6DE809F6226159C61 /* Frameworks */,
+				CE22287CCB15E22CEEFCCE00 /* MeetingCaptionTranslator */,
+				34B09681B9E0C0A1621510FC /* MeetingCaptionTranslatorTests */,
+			);
+			sourceTree = "<group>";
+		};
+		8AA159F6DE809F6226159C61 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				312B7099C749C73E799727F2 /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		AEF2EDC9792E30630F0592D1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1E234EBFD5DC53F8510FEA40 /* MeetingCaptionTranslator.app */,
+				21C723934F1F4CDF4350286E /* MeetingCaptionTranslatorTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CE22287CCB15E22CEEFCCE00 /* MeetingCaptionTranslator */ = {
+			isa = PBXGroup;
+			children = (
+				164E9AEA6617B05856B62EF2 /* AppState.swift */,
+				95E2C7660CB402B13D6B788B /* CaptionLanguagePair.swift */,
+				27A936306FE54487F54430C3 /* ContentView.swift */,
+				00F32FAD619637320F7252DF /* MeetingCaptionTranslatorApp.swift */,
+				94767F992A8F8EBC0D5D3F21 /* OverlayWindowManager.swift */,
+				D21C0EBD2616116FE28CC5D2 /* AppError.swift */,
+				ABA1A2971FB7EBBDC5EC0E0C /* AppSettings.swift */,
+				6F6079090A0E4F96B08A179B /* CaptionLine.swift */,
+				697592E2C8839C961577703E /* CaptureTarget.swift */,
+				B6A61919F8E76E230B99E3FA /* TranscriptEvent.swift */,
+				64347B0838021C14AAD0D1FE /* Info.plist */,
+				1C55FCEBFB5855B143F69A34 /* MeetingCaptionTranslator.entitlements */,
+				921CCD00DDA00FF51AB51307 /* AudioBufferConverter.swift */,
+				A642FD2CF7ED4966BCAA031C /* CaptionPipelineService.swift */,
+				B342F97272F27AF47BB56126 /* CaptionStore.swift */,
+				026442E2D795C78D40637E8B /* SystemAudioCaptureService.swift */,
+				56464F0D2736952C1C304E9D /* PermissionService.swift */,
+				0161E0C288FCF4E3EF8D2011 /* AppSettingsStore.swift */,
+				BD24B2BFCBBF21468D84169E /* LiveTranscriptionService.swift */,
+				C0F4FA7300C9B4E7309482F9 /* AppleTranslationService.swift */,
+				B8742B58625B52C034F4A96B /* AppViewModel.swift */,
+				C308752F1045D15A8C81F213 /* OverlayViewModel.swift */,
+				752C97AAE95423884454C454 /* OverlayView.swift */,
+				5CF7EE8B2AD37AAB43D3AFA7 /* Assets.xcassets */,
+			);
+			name = MeetingCaptionTranslator;
+			path = MeetingCaptionTranslator;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		337B0421A00DF1696F693F47 /* MeetingCaptionTranslatorTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FBFB72548005C70C21DC0F3C /* Build configuration list for PBXNativeTarget "MeetingCaptionTranslatorTests" */;
+			buildPhases = (
+				B0B9A1D507AD4F4AFA15E305 /* Sources */,
+				5C102079D70D92B4CC5A6A58 /* Frameworks */,
+				2392BF1DBC3C70605A07D21E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				55D5B107B5BA64DA7D790BAE /* PBXTargetDependency */,
+			);
+			name = MeetingCaptionTranslatorTests;
+			productName = MeetingCaptionTranslatorTests;
+			productReference = 21C723934F1F4CDF4350286E /* MeetingCaptionTranslatorTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		3BE8552AE6CA6B586D70019C /* MeetingCaptionTranslator */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D6931669C2753D139FBF5763 /* Build configuration list for PBXNativeTarget "MeetingCaptionTranslator" */;
+			buildPhases = (
+				15CC16E90702405DA37ABE73 /* Sources */,
+				EBF426786B500976FE147081 /* Frameworks */,
+				FBCD59E7F353B2402A50B4CA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MeetingCaptionTranslator;
+			productName = MeetingCaptionTranslator;
+			productReference = 1E234EBFD5DC53F8510FEA40 /* MeetingCaptionTranslator.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F7FE810226581B9A140D558E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftMigration = 9999;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = C5BF8DD50F66D0F7BA65E9D0 /* Build configuration list for PBXProject "MeetingCaptionTranslator" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 85E0AD29540ECC41A948A857;
+			minimizedProjectReferenceProxies = 0;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = AEF2EDC9792E30630F0592D1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3BE8552AE6CA6B586D70019C /* MeetingCaptionTranslator */,
+				337B0421A00DF1696F693F47 /* MeetingCaptionTranslatorTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2392BF1DBC3C70605A07D21E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FBCD59E7F353B2402A50B4CA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B88420E0AD606F6BD895BE60 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		15CC16E90702405DA37ABE73 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9B7D43BA726AAEC4B00CCADE /* AppState.swift in Sources */,
+				C5744A827009659CBA23CC98 /* CaptionLanguagePair.swift in Sources */,
+				51459371461707972A1EB0F5 /* ContentView.swift in Sources */,
+				D62DC38AA29A762D79548934 /* MeetingCaptionTranslatorApp.swift in Sources */,
+				E79FFAEAAED480180792D3AA /* OverlayWindowManager.swift in Sources */,
+				08C512DB34E11886685A143B /* AppError.swift in Sources */,
+				0D028EDC70EF89EC96DFF228 /* AppSettings.swift in Sources */,
+				E9CFE88A9E180680FF3CD827 /* CaptionLine.swift in Sources */,
+				A444EDF684D46E5804ADE7C0 /* CaptureTarget.swift in Sources */,
+				5FAF9F05D761FD5BF248CE60 /* TranscriptEvent.swift in Sources */,
+				ABB449DB40CF40642108505C /* AudioBufferConverter.swift in Sources */,
+				74E7A8D6C55768F4F0CFC90B /* CaptionPipelineService.swift in Sources */,
+				70B11130965EB2C4F7633B57 /* CaptionStore.swift in Sources */,
+				9081D0E9352882C6EDA24B3B /* SystemAudioCaptureService.swift in Sources */,
+				E487AC0E0F50917469F0DD74 /* PermissionService.swift in Sources */,
+				59B61F395DDD89270F679856 /* AppSettingsStore.swift in Sources */,
+				B334009DBB67F3FFF1D4DE0D /* LiveTranscriptionService.swift in Sources */,
+				5BD16EFE6E72C80C5748596D /* AppleTranslationService.swift in Sources */,
+				3F13C166A9E24EDF78AC1EA0 /* AppViewModel.swift in Sources */,
+				F6577C17CAD94727CEC0A8D8 /* OverlayViewModel.swift in Sources */,
+				57F4A2E3BC8ECCAE6350135A /* OverlayView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0B9A1D507AD4F4AFA15E305 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8403FC3E19B09B99C9538CD1 /* AppSettingsStoreTests.swift in Sources */,
+				5B46E454D3808F37AC1EAAA5 /* CaptionPipelineServiceTests.swift in Sources */,
+				B2DF83AE57B66432FA7F9631 /* CaptionStoreTests.swift in Sources */,
+				89E5B6C1B27886DD0A0F750A /* CoreModelTests.swift in Sources */,
+				83E9348010A414C26C23EB1D /* OverlayViewModelTests.swift in Sources */,
+				A04C1AD136E8807A7BB1D955 /* Placeholder.swift in Sources */,
+				229CC0B8919904ACE208C207 /* ProjectLayoutSmokeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		55D5B107B5BA64DA7D790BAE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MeetingCaptionTranslator;
+			target = 3BE8552AE6CA6B586D70019C /* MeetingCaptionTranslator */;
+			targetProxy = 0B7EC6D716CECA8760E6AFAA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		198514C1CA0171FB6976926F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MeetingCaptionTranslator/Resources/MeetingCaptionTranslator.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MeetingCaptionTranslator/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = atelierarith.MeetingCaptionTranslator;
+				PRODUCT_NAME = MeetingCaptionTranslator;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+			};
+			name = Release;
+		};
+		2A202D98D5C3B6DA32B37BF9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = atelierarith.MeetingCaptionTranslatorTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MeetingCaptionTranslator.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MeetingCaptionTranslator";
+			};
+			name = Debug;
+		};
+		364ECB995689062308AA295A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		7B7560DBE71EF5EF87FBBBE6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A35A23F3AFD0A20ECF7B99C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = atelierarith.MeetingCaptionTranslatorTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MeetingCaptionTranslator.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MeetingCaptionTranslator";
+			};
+			name = Release;
+		};
+		D912D6C84CA67F2F3B4866A2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MeetingCaptionTranslator/Resources/MeetingCaptionTranslator.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MeetingCaptionTranslator/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = atelierarith.MeetingCaptionTranslator;
+				PRODUCT_NAME = MeetingCaptionTranslator;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C5BF8DD50F66D0F7BA65E9D0 /* Build configuration list for PBXProject "MeetingCaptionTranslator" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				364ECB995689062308AA295A /* Debug */,
+				7B7560DBE71EF5EF87FBBBE6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D6931669C2753D139FBF5763 /* Build configuration list for PBXNativeTarget "MeetingCaptionTranslator" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				198514C1CA0171FB6976926F /* Release */,
+				D912D6C84CA67F2F3B4866A2 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FBFB72548005C70C21DC0F3C /* Build configuration list for PBXNativeTarget "MeetingCaptionTranslatorTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A35A23F3AFD0A20ECF7B99C4 /* Release */,
+				2A202D98D5C3B6DA32B37BF9 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F7FE810226581B9A140D558E /* Project object */;
+}

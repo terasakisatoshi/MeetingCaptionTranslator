@@ -1,0 +1,12 @@
+.DS_Store
+
+.bundle/
+vendor/bundle/
+
+DerivedData/
+build/
+*.xcresult
+
+MeetingCaptionTranslator.xcodeproj/xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
