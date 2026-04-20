@@ -22,8 +22,11 @@ bundle exec ruby tools/generate_project.rb
 ## Get the App
 To obtain a runnable app bundle from this repository:
 
+- Install Xcode, Ruby, and Bundler first.
+- Use the HTTPS clone URL below unless you already have GitHub SSH access configured.
+
 ```bash
-git clone git@github.com:terasakisatoshi/MeetingCaptionTranslator.git
+git clone https://github.com/terasakisatoshi/MeetingCaptionTranslator.git
 cd MeetingCaptionTranslator
 bundle install
 bundle exec ruby tools/generate_project.rb
