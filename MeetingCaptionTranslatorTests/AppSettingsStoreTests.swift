@@ -12,7 +12,8 @@ final class AppSettingsStoreTests: XCTestCase {
             overlayOpacity: 0.72,
             fontSize: 28,
             maximumVisibleLines: 5,
-            isClickThroughEnabled: true,
+            overlayWidth: 1120,
+            overlayHeight: 320,
             languagePair: .defaultPair
         )
 
@@ -30,5 +31,40 @@ final class AppSettingsStoreTests: XCTestCase {
         let store = AppSettingsStore(userDefaults: defaults)
 
         XCTAssertEqual(store.load(), .defaultValue)
+    }
+
+    func test_store_loads_legacy_settings_without_overlay_size_fields() throws {
+        let suiteName = "AppSettingsStoreTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let legacyPayload = """
+        {
+          "overlayOpacity": 0.7,
+          "fontSize": 26,
+          "maximumVisibleLines": 5,
+          "isClickThroughEnabled": true,
+          "languagePair": {
+            "sourceLanguage": "en",
+            "targetLanguage": "ja"
+          }
+        }
+        """
+        defaults.set(try XCTUnwrap(legacyPayload.data(using: .utf8)), forKey: "app_settings")
+
+        let restored = AppSettingsStore(userDefaults: defaults).load()
+
+        XCTAssertEqual(restored.overlayOpacity, 0.7)
+        XCTAssertEqual(restored.fontSize, 26)
+        XCTAssertEqual(restored.overlayWidth, AppSettings.defaultValue.overlayWidth)
+        XCTAssertEqual(restored.overlayHeight, AppSettings.defaultValue.overlayHeight)
+        XCTAssertEqual(
+            restored.maximumVisibleLines,
+            AppSettings.derivedMaximumVisibleLines(
+                overlayHeight: AppSettings.defaultValue.overlayHeight,
+                fontSize: 26
+            )
+        )
+        XCTAssertEqual(restored.languagePair, .defaultPair)
     }
 }

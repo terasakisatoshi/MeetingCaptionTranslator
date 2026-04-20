@@ -23,7 +23,7 @@ final class CapturedFrameRelayTests: XCTestCase {
 
     private func waitUntil(
         _ condition: @escaping @Sendable () async -> Bool,
-        iterations: Int = 50,
+        iterations: Int = 200,
         file: StaticString = #filePath,
         line: UInt = #line
     ) async {

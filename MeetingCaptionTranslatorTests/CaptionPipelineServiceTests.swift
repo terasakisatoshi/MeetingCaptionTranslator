@@ -56,4 +56,17 @@ final class CaptionPipelineServiceTests: XCTestCase {
         XCTAssertTrue(service.visibleLines.isEmpty)
         XCTAssertEqual(service.appState, .idle)
     }
+
+    func test_pipeline_preserves_history_beyond_visible_limit() async {
+        let service = CaptionPipelineService(maximumVisibleLines: 2) { sourceText in
+            "ja:\(sourceText)"
+        }
+
+        await service.handleTranscript(.init(sourceText: "one", state: .final))
+        await service.handleTranscript(.init(sourceText: "two", state: .final))
+        await service.handleTranscript(.init(sourceText: "three", state: .final))
+
+        XCTAssertEqual(service.historyLines.map(\.sourceText), ["one", "two", "three"])
+        XCTAssertEqual(service.visibleLines.map(\.sourceText), ["two", "three"])
+    }
 }

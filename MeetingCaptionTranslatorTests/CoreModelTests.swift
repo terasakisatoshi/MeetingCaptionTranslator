@@ -45,7 +45,38 @@ final class CoreModelTests: XCTestCase {
         XCTAssertEqual(state.statusText, "Transcription unavailable")
     }
 
-    func test_default_settings_start_with_click_through_disabled() {
-        XCTAssertFalse(AppSettings.defaultValue.isClickThroughEnabled)
+    func test_default_settings_include_overlay_size_defaults() {
+        XCTAssertEqual(AppSettings.defaultValue.overlayWidth, 960)
+        XCTAssertEqual(AppSettings.defaultValue.overlayHeight, 220)
+    }
+
+    func test_app_settings_clamps_overlay_height_to_extended_maximum() {
+        let settings = AppSettings(
+            overlayOpacity: 0.58,
+            fontSize: 24,
+            maximumVisibleLines: 4,
+            overlayWidth: 960,
+            overlayHeight: 2_000,
+            languagePair: .defaultPair
+        )
+
+        XCTAssertEqual(settings.overlayHeight, 1_440)
+    }
+
+    func test_app_settings_derives_visible_line_limit_from_overlay_height_and_font_size() {
+        let settings = AppSettings(
+            overlayOpacity: 0.58,
+            fontSize: 24,
+            maximumVisibleLines: 1,
+            overlayWidth: 960,
+            overlayHeight: 1_080,
+            languagePair: .defaultPair
+        )
+
+        XCTAssertEqual(
+            settings.maximumVisibleLines,
+            AppSettings.derivedMaximumVisibleLines(overlayHeight: 1_080, fontSize: 24)
+        )
+        XCTAssertGreaterThan(settings.maximumVisibleLines, AppSettings.defaultValue.maximumVisibleLines)
     }
 }

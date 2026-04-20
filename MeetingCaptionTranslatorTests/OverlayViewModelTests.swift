@@ -47,17 +47,54 @@ final class OverlayViewModelTests: XCTestCase {
         let viewModel = OverlayViewModel(settings: .defaultValue)
         let updatedSettings = AppSettings(
             overlayOpacity: 0.65,
-            fontSize: 30,
-            maximumVisibleLines: 6,
-            isClickThroughEnabled: false,
+            fontSize: 24,
+            maximumVisibleLines: 1,
+            overlayWidth: 1280,
+            overlayHeight: 1_080,
             languagePair: .defaultPair
         )
 
         viewModel.apply(settings: updatedSettings)
 
         XCTAssertEqual(viewModel.overlayOpacity, 0.65)
-        XCTAssertEqual(viewModel.fontSize, 30)
-        XCTAssertFalse(viewModel.isClickThroughEnabled)
-        XCTAssertEqual(viewModel.maximumVisibleLines, 6)
+        XCTAssertEqual(viewModel.fontSize, 24)
+        XCTAssertEqual(viewModel.overlayWidth, 1280)
+        XCTAssertEqual(viewModel.overlayHeight, 1_080)
+        XCTAssertEqual(
+            viewModel.maximumVisibleLines,
+            AppSettings.derivedMaximumVisibleLines(overlayHeight: 1_080, fontSize: 24)
+        )
+    }
+
+    func test_view_model_renders_full_history_not_just_visible_line_limit() {
+        let settings = AppSettings(
+            overlayOpacity: 0.58,
+            fontSize: 24,
+            maximumVisibleLines: 1,
+            overlayWidth: 960,
+            overlayHeight: 220,
+            languagePair: .defaultPair
+        )
+        let viewModel = OverlayViewModel(settings: settings)
+        let lines = [
+            CaptionLine(
+                id: UUID(),
+                sourceText: "first",
+                translatedText: "1",
+                state: .final,
+                createdAt: .distantPast
+            ),
+            CaptionLine(
+                id: UUID(),
+                sourceText: "second",
+                translatedText: "2",
+                state: .final,
+                createdAt: .now
+            )
+        ]
+
+        viewModel.render(lines: lines, appState: .capturing)
+
+        XCTAssertEqual(viewModel.rows.map(\.sourceText), ["first", "second"])
     }
 }

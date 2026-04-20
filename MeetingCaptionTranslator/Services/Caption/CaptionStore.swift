@@ -1,11 +1,21 @@
 import Foundation
 
 struct CaptionStore {
-    private let maximumVisibleLines: Int
-    private(set) var visibleLines: [CaptionLine] = []
+    private var maximumVisibleLines: Int
+    private let maximumStoredLines: Int
+    private var storedLines: [CaptionLine] = []
 
-    init(maximumVisibleLines: Int) {
+    var visibleLines: [CaptionLine] {
+        Array(storedLines.suffix(maximumVisibleLines))
+    }
+
+    var historyLines: [CaptionLine] {
+        storedLines
+    }
+
+    init(maximumVisibleLines: Int, maximumStoredLines: Int = 500) {
         self.maximumVisibleLines = max(1, maximumVisibleLines)
+        self.maximumStoredLines = max(1, maximumStoredLines)
     }
 
     @discardableResult
@@ -17,9 +27,9 @@ struct CaptionStore {
     ) -> CaptionLine {
         let nextLine: CaptionLine
 
-        if let current = visibleLines.last, current.state == .partial {
+        if let current = storedLines.last, current.state == .partial {
             nextLine = current.updating(sourceText: sourceText, translatedText: translatedText, state: state)
-            visibleLines[visibleLines.index(before: visibleLines.endIndex)] = nextLine
+            storedLines[storedLines.index(before: storedLines.endIndex)] = nextLine
         } else {
             nextLine = CaptionLine(
                 id: UUID(),
@@ -28,17 +38,21 @@ struct CaptionStore {
                 state: state,
                 createdAt: date
             )
-            visibleLines.append(nextLine)
+            storedLines.append(nextLine)
         }
 
-        if visibleLines.count > maximumVisibleLines {
-            visibleLines = Array(visibleLines.suffix(maximumVisibleLines))
+        if storedLines.count > maximumStoredLines {
+            storedLines = Array(storedLines.suffix(maximumStoredLines))
         }
 
         return nextLine
     }
 
     mutating func reset() {
-        visibleLines = []
+        storedLines = []
+    }
+
+    mutating func updateMaximumVisibleLines(_ maximumVisibleLines: Int) {
+        self.maximumVisibleLines = max(1, maximumVisibleLines)
     }
 }

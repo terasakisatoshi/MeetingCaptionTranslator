@@ -11,7 +11,7 @@ final class AppViewModelTests: XCTestCase {
         let viewModel = AppViewModel(
             settingsStore: makeSettingsStore(),
             captureService: captureService,
-            overlayWindowManagerFactory: { _ in overlayWindowManager }
+            overlayWindowManagerFactory: { _, _ in overlayWindowManager }
         )
 
         viewModel.initialize()
@@ -26,7 +26,7 @@ final class AppViewModelTests: XCTestCase {
         let viewModel = AppViewModel(
             settingsStore: makeSettingsStore(),
             captureService: captureService,
-            overlayWindowManagerFactory: { _ in overlayWindowManager }
+            overlayWindowManagerFactory: { _, _ in overlayWindowManager }
         )
 
         viewModel.initialize()
@@ -44,7 +44,7 @@ final class AppViewModelTests: XCTestCase {
             captureService: captureService,
             transcriptionServiceFactory: { _ in transcriptionService },
             translationServiceFactory: { _ in translationService },
-            overlayWindowManagerFactory: { _ in FakeOverlayWindowManager() }
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
         )
 
         viewModel.start()
@@ -67,7 +67,7 @@ final class AppViewModelTests: XCTestCase {
             captureService: captureService,
             transcriptionServiceFactory: { _ in transcriptionService },
             translationServiceFactory: { _ in translationService },
-            overlayWindowManagerFactory: { _ in FakeOverlayWindowManager() }
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
         )
 
         viewModel.start()
@@ -92,7 +92,7 @@ final class AppViewModelTests: XCTestCase {
             captureService: captureService,
             transcriptionServiceFactory: { _ in transcriptionService },
             translationServiceFactory: { _ in translationService },
-            overlayWindowManagerFactory: { _ in FakeOverlayWindowManager() }
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
         )
 
         viewModel.start()
@@ -113,7 +113,7 @@ final class AppViewModelTests: XCTestCase {
             captureService: captureService,
             transcriptionServiceFactory: { _ in transcriptionService },
             translationServiceFactory: { _ in translationService },
-            overlayWindowManagerFactory: { _ in FakeOverlayWindowManager() }
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
         )
 
         viewModel.start()
@@ -139,7 +139,7 @@ final class AppViewModelTests: XCTestCase {
             captureService: captureService,
             transcriptionServiceFactory: { _ in transcriptionService },
             translationServiceFactory: { _ in translationService },
-            overlayWindowManagerFactory: { _ in FakeOverlayWindowManager() }
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
         )
 
         viewModel.start()
@@ -162,7 +162,7 @@ final class AppViewModelTests: XCTestCase {
             captureService: captureService,
             transcriptionServiceFactory: { _ in transcriptionService },
             translationServiceFactory: { _ in translationService },
-            overlayWindowManagerFactory: { _ in FakeOverlayWindowManager() }
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
         )
 
         viewModel.start()
@@ -177,6 +177,61 @@ final class AppViewModelTests: XCTestCase {
         await waitUntil { viewModel.diagnosticsText.contains("Transcript events: 1") }
 
         XCTAssertTrue(viewModel.diagnosticsText.contains("Last transcript: partial"))
+    }
+
+    func test_updateOverlayAppearance_persistsSettingsAndUpdatesViewModel() throws {
+        let store = makeSettingsStore()
+        let viewModel = AppViewModel(
+            settingsStore: store,
+            captureService: FakeCaptureService(),
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
+        )
+
+        viewModel.updateOverlayOpacity(0.58)
+        viewModel.updateOverlayWidth(1180)
+        viewModel.updateOverlayHeight(1080)
+        viewModel.updateOverlayFontSize(24)
+
+        XCTAssertEqual(viewModel.overlayViewModel.overlayOpacity, 0.58)
+        XCTAssertEqual(viewModel.overlayViewModel.overlayWidth, 1180)
+        XCTAssertEqual(viewModel.overlayViewModel.overlayHeight, 1080)
+        XCTAssertEqual(viewModel.overlayViewModel.fontSize, 24)
+        XCTAssertEqual(
+            viewModel.overlayViewModel.maximumVisibleLines,
+            AppSettings.derivedMaximumVisibleLines(overlayHeight: 1080, fontSize: 24)
+        )
+
+        let restored = store.load()
+        XCTAssertEqual(restored.overlayOpacity, 0.58)
+        XCTAssertEqual(restored.overlayWidth, 1180)
+        XCTAssertEqual(restored.overlayHeight, 1080)
+        XCTAssertEqual(restored.fontSize, 24)
+        XCTAssertEqual(
+            restored.maximumVisibleLines,
+            AppSettings.derivedMaximumVisibleLines(overlayHeight: 1080, fontSize: 24)
+        )
+    }
+
+    func test_initialize_persistsManualOverlayResize() async {
+        let overlayWindowManager = FakeOverlayWindowManager()
+        let store = makeSettingsStore()
+        let viewModel = AppViewModel(
+            settingsStore: store,
+            captureService: FakeCaptureService(),
+            overlayWindowManagerFactory: { _, onSizeChange in
+                overlayWindowManager.onSizeChange = onSizeChange
+                return overlayWindowManager
+            }
+        )
+
+        viewModel.initialize()
+        overlayWindowManager.simulateResize(to: CGSize(width: 1260, height: 360))
+        await Task.yield()
+
+        XCTAssertEqual(viewModel.overlayViewModel.overlayWidth, 1260)
+        XCTAssertEqual(viewModel.overlayViewModel.overlayHeight, 360)
+        XCTAssertEqual(store.load().overlayWidth, 1260)
+        XCTAssertEqual(store.load().overlayHeight, 360)
     }
 
     private func makeSettingsStore() -> AppSettingsStore {
@@ -392,8 +447,13 @@ private enum TestError: LocalizedError {
 @MainActor
 private final class FakeOverlayWindowManager: OverlayWindowManaging {
     private(set) var didShow = false
+    var onSizeChange: (@MainActor (CGSize) -> Void)?
 
     func show() {
         didShow = true
+    }
+
+    func simulateResize(to size: CGSize) {
+        onSizeChange?(size)
     }
 }

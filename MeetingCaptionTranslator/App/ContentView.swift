@@ -23,10 +23,36 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Toggle("Overlay Click-Through", isOn: Binding(
-                get: { viewModel.overlayViewModel.isClickThroughEnabled },
-                set: { viewModel.updateOverlayClickThrough($0) }
-            ))
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Overlay")
+                    .font(.headline)
+
+                Text("Resize the overlay window directly from its edges or corners.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+
+                overlaySlider(
+                    title: "Opacity",
+                    value: Binding(
+                        get: { viewModel.overlayViewModel.overlayOpacity },
+                        set: { viewModel.updateOverlayOpacity($0) }
+                    ),
+                    range: AppSettings.overlayOpacityRange,
+                    step: 0.02,
+                    valueFormatter: { String(format: "%.0f%%", (1 - $0) * 100) }
+                )
+
+                overlaySlider(
+                    title: "Font Size",
+                    value: Binding(
+                        get: { viewModel.overlayViewModel.fontSize },
+                        set: { viewModel.updateOverlayFontSize($0) }
+                    ),
+                    range: AppSettings.fontSizeRange,
+                    step: 1,
+                    valueFormatter: { "\(Int($0)) pt" }
+                )
+            }
 
             HStack(spacing: 12) {
                 Button("Start") {
@@ -69,9 +95,29 @@ struct ContentView: View {
             Spacer()
         }
         .padding(24)
-        .frame(minWidth: 420, minHeight: 280)
+        .frame(minWidth: 460, minHeight: 460)
         .task {
             viewModel.initialize()
+        }
+    }
+
+    private func overlaySlider(
+        title: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        step: Double,
+        valueFormatter: @escaping (Double) -> String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(valueFormatter(value.wrappedValue))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+
+            Slider(value: value, in: range, step: step)
         }
     }
 }

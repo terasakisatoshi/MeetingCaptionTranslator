@@ -6,6 +6,7 @@ final class CaptionPipelineService {
     private let translator: (String) async throws -> String
 
     private(set) var visibleLines: [CaptionLine] = []
+    private(set) var historyLines: [CaptionLine] = []
     private(set) var appState: AppState = .idle
 
     init(
@@ -52,11 +53,19 @@ final class CaptionPipelineService {
         }
 
         visibleLines = captionStore.visibleLines
+        historyLines = captionStore.historyLines
     }
 
     func stop() {
         captionStore.reset()
         visibleLines = []
+        historyLines = []
         appState = .idle
+    }
+
+    func updateMaximumVisibleLines(_ maximumVisibleLines: Int) {
+        captionStore.updateMaximumVisibleLines(maximumVisibleLines)
+        visibleLines = captionStore.visibleLines
+        historyLines = captionStore.historyLines
     }
 }

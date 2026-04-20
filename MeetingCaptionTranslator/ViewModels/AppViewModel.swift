@@ -19,9 +19,11 @@ protocol AppViewModelTranslationServicing: AnyObject {
 @MainActor
 protocol AppViewModelCaptionPipelineServicing: AnyObject {
     var visibleLines: [CaptionLine] { get }
+    var historyLines: [CaptionLine] { get }
     var appState: AppState { get }
     func handleTranscript(_ event: TranscriptEvent) async
     func stop()
+    func updateMaximumVisibleLines(_ maximumVisibleLines: Int)
 }
 
 private final class LiveTranscriptionServiceAdapter: AppViewModelTranscriptionServicing, @unchecked Sendable {
@@ -76,6 +78,10 @@ private final class CaptionPipelineServiceAdapter: AppViewModelCaptionPipelineSe
         service.visibleLines
     }
 
+    var historyLines: [CaptionLine] {
+        service.historyLines
+    }
+
     var appState: AppState {
         service.appState
     }
@@ -86,6 +92,10 @@ private final class CaptionPipelineServiceAdapter: AppViewModelCaptionPipelineSe
 
     func stop() {
         service.stop()
+    }
+
+    func updateMaximumVisibleLines(_ maximumVisibleLines: Int) {
+        service.updateMaximumVisibleLines(maximumVisibleLines)
     }
 }
 
@@ -107,7 +117,7 @@ final class AppViewModel: ObservableObject {
     private let transcriptionServiceFactory: @MainActor (Locale) -> any AppViewModelTranscriptionServicing
     private let translationServiceFactory: @MainActor (CaptionLanguagePair) -> any AppViewModelTranslationServicing
     private let captionPipelineServiceFactory: @MainActor (Int, @escaping (String) async throws -> String) -> any AppViewModelCaptionPipelineServicing
-    private let overlayWindowManagerFactory: @MainActor (OverlayViewModel) -> any OverlayWindowManaging
+    private let overlayWindowManagerFactory: @MainActor (OverlayViewModel, @escaping @MainActor (CGSize) -> Void) -> any OverlayWindowManaging
     private var transcriptionService: (any AppViewModelTranscriptionServicing)?
     private var translationService: (any AppViewModelTranslationServicing)?
     private var captionPipelineService: (any AppViewModelCaptionPipelineServicing)?
@@ -131,8 +141,8 @@ final class AppViewModel: ObservableObject {
         captionPipelineServiceFactory: @escaping @MainActor (Int, @escaping (String) async throws -> String) -> any AppViewModelCaptionPipelineServicing = { (maximumVisibleLines: Int, translator: @escaping (String) async throws -> String) -> any AppViewModelCaptionPipelineServicing in
             CaptionPipelineServiceAdapter(maximumVisibleLines: maximumVisibleLines, translator: translator)
         },
-        overlayWindowManagerFactory: @escaping @MainActor (OverlayViewModel) -> any OverlayWindowManaging = { viewModel in
-            OverlayWindowManager(viewModel: viewModel)
+        overlayWindowManagerFactory: @escaping @MainActor (OverlayViewModel, @escaping @MainActor (CGSize) -> Void) -> any OverlayWindowManaging = { viewModel, onSizeChange in
+            OverlayWindowManager(viewModel: viewModel, onSizeChange: onSizeChange)
         }
     ) {
         self.settingsStore = settingsStore
@@ -147,7 +157,9 @@ final class AppViewModel: ObservableObject {
 
     func initialize() {
         if overlayWindowManager == nil {
-            overlayWindowManager = overlayWindowManagerFactory(overlayViewModel)
+            overlayWindowManager = overlayWindowManagerFactory(overlayViewModel) { [weak self] size in
+                self?.handleOverlayWindowResized(to: size)
+            }
             overlayWindowManager?.show()
         }
     }
@@ -182,9 +194,58 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    func updateOverlayClickThrough(_ enabled: Bool) {
-        settings.isClickThroughEnabled = enabled
+    func updateOverlayWidth(_ width: Double) {
+        settings.overlayWidth = AppSettings.clamp(width, to: AppSettings.overlayWidthRange)
         overlayViewModel.apply(settings: settings)
+        try? settingsStore.save(settings)
+    }
+
+    func updateOverlayOpacity(_ opacity: Double) {
+        settings.overlayOpacity = AppSettings.clamp(opacity, to: AppSettings.overlayOpacityRange)
+        overlayViewModel.apply(settings: settings)
+        try? settingsStore.save(settings)
+    }
+
+    func updateOverlayHeight(_ height: Double) {
+        settings.overlayHeight = AppSettings.clamp(height, to: AppSettings.overlayHeightRange)
+        settings.maximumVisibleLines = AppSettings.derivedMaximumVisibleLines(
+            overlayHeight: settings.overlayHeight,
+            fontSize: settings.fontSize
+        )
+        captionPipelineService?.updateMaximumVisibleLines(settings.maximumVisibleLines)
+        overlayViewModel.apply(settings: settings)
+        if let captionPipelineService {
+            overlayViewModel.render(lines: captionPipelineService.historyLines, appState: appState)
+        }
+        try? settingsStore.save(settings)
+    }
+
+    func updateOverlayFontSize(_ fontSize: Double) {
+        settings.fontSize = AppSettings.clamp(fontSize, to: AppSettings.fontSizeRange)
+        settings.maximumVisibleLines = AppSettings.derivedMaximumVisibleLines(
+            overlayHeight: settings.overlayHeight,
+            fontSize: settings.fontSize
+        )
+        captionPipelineService?.updateMaximumVisibleLines(settings.maximumVisibleLines)
+        overlayViewModel.apply(settings: settings)
+        if let captionPipelineService {
+            overlayViewModel.render(lines: captionPipelineService.historyLines, appState: appState)
+        }
+        try? settingsStore.save(settings)
+    }
+
+    private func handleOverlayWindowResized(to size: CGSize) {
+        settings.overlayWidth = AppSettings.clamp(size.width, to: AppSettings.overlayWidthRange)
+        settings.overlayHeight = AppSettings.clamp(size.height, to: AppSettings.overlayHeightRange)
+        settings.maximumVisibleLines = AppSettings.derivedMaximumVisibleLines(
+            overlayHeight: settings.overlayHeight,
+            fontSize: settings.fontSize
+        )
+        captionPipelineService?.updateMaximumVisibleLines(settings.maximumVisibleLines)
+        overlayViewModel.apply(settings: settings)
+        if let captionPipelineService {
+            overlayViewModel.render(lines: captionPipelineService.historyLines, appState: appState)
+        }
         try? settingsStore.save(settings)
     }
 
@@ -356,7 +417,7 @@ final class AppViewModel: ObservableObject {
         }
 
         appState = captionPipelineService.appState
-        overlayViewModel.render(lines: captionPipelineService.visibleLines, appState: appState)
+        overlayViewModel.render(lines: captionPipelineService.historyLines, appState: appState)
     }
 
     private func handleTranscriptionFailure(_ error: Error, token: Int) async {

@@ -36,4 +36,50 @@ final class SelectableMessageTextTests: XCTestCase {
         XCTAssertTrue(textField.isSelectable)
         XCTAssertFalse(textField.isEditable)
     }
+
+    func test_make_scrollable_text_view_creates_selectable_scrolling_text_view() {
+        let scrollView = OverlayTranscriptTextViewComponents.make()
+        let textView = try? XCTUnwrap(scrollView.documentView as? NSTextView)
+
+        XCTAssertNotNil(textView)
+        XCTAssertTrue(scrollView.hasVerticalScroller)
+        XCTAssertFalse(scrollView.drawsBackground)
+        XCTAssertEqual(scrollView.borderType, .noBorder)
+        XCTAssertTrue(textView?.isSelectable == true)
+        XCTAssertFalse(textView?.isEditable == true)
+        XCTAssertFalse(textView?.drawsBackground == true)
+    }
+
+    func test_overlay_transcript_document_builds_single_copyable_block() {
+        let rows = [
+            OverlayRow(
+                id: UUID(),
+                sourceText: "hello world",
+                translatedText: "こんにちは世界",
+                state: .final
+            ),
+            OverlayRow(
+                id: UUID(),
+                sourceText: "how are you",
+                translatedText: nil,
+                state: .partial
+            )
+        ]
+
+        let document = OverlayTranscriptDocument.make(
+            rows: rows,
+            fontSize: 24,
+            statusText: "Capturing"
+        )
+
+        XCTAssertEqual(
+            document.string,
+            """
+            hello world
+            こんにちは世界
+
+            how are you
+            """
+        )
+    }
 }

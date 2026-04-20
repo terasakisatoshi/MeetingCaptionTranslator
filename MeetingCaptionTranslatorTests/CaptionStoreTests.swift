@@ -37,7 +37,7 @@ final class CaptionStoreTests: XCTestCase {
         XCTAssertEqual(store.visibleLines[0].translatedText, "こんにちは")
     }
 
-    func test_store_trims_old_lines_to_maximum() {
+    func test_store_preserves_history_while_visible_lines_follow_limit() {
         var store = CaptionStore(maximumVisibleLines: 3)
 
         _ = store.ingest(sourceText: "one", translatedText: "1", state: .final, at: .distantPast)
@@ -45,6 +45,7 @@ final class CaptionStoreTests: XCTestCase {
         _ = store.ingest(sourceText: "three", translatedText: "3", state: .final, at: .distantPast)
         _ = store.ingest(sourceText: "four", translatedText: "4", state: .final, at: .distantPast)
 
+        XCTAssertEqual(store.historyLines.map(\.sourceText), ["one", "two", "three", "four"])
         XCTAssertEqual(store.visibleLines.map(\.sourceText), ["two", "three", "four"])
     }
 }
