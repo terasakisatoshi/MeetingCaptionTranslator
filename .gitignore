@@ -5,6 +5,7 @@ vendor/bundle/
 
 DerivedData/
 build/
+dist/
 .worktrees/
 *.xcresult
 

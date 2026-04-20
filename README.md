@@ -34,6 +34,7 @@ ruby tools/build_release.rb
 ```
 
 Copies the built app bundle to `dist/MeetingCaptionTranslator.app`.
+Validate the release path with `ruby tools/build_release_test.rb`.
 
 ## Test
 ```bash
@@ -45,7 +46,7 @@ xcodebuild test \
 ```
 
 ## Run
-Open `MeetingCaptionTranslator.xcodeproj` in Xcode and run the `MeetingCaptionTranslator` scheme, or launch the built app from `DerivedData`. On first use, allow:
+Open `MeetingCaptionTranslator.xcodeproj` in Xcode and run the `MeetingCaptionTranslator` scheme, or launch the built app from `DerivedData`. If you used `ruby tools/build_release.rb`, launch `dist/MeetingCaptionTranslator.app` instead. On first use, allow:
 - `Screen Recording`
 - `Speech Recognition`
 
