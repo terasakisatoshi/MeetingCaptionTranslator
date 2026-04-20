@@ -25,15 +25,24 @@ module BuildRelease
   end
 
   def self.run(root: ROOT, runner: CommandRunner.new)
-    build_status = runner.run(*xcodebuild_build_command)
-    return build_status.exitstatus || 1 unless build_status.success?
+    Dir.chdir(root) do
+      build_status = runner.run(*xcodebuild_build_command)
+      return build_status.exitstatus || 1 unless build_status.success?
 
-    output, status = runner.capture(*xcodebuild_show_build_settings_command)
-    raise BuildError, "xcodebuild -showBuildSettings failed" unless status.success?
+      output, status = runner.capture(*xcodebuild_show_build_settings_command)
+      raise BuildError, "xcodebuild -showBuildSettings failed" unless status.success?
 
-    built_app_path = built_app_path_from_settings(parse_build_settings(output))
-    copy_product(root: root, built_app_path: built_app_path)
-    0
+      built_app_path = built_app_path_from_settings(parse_build_settings(output))
+      copy_product(root: root, built_app_path: built_app_path)
+      0
+    end
+  end
+
+  def self.main(root: ROOT, runner: CommandRunner.new, io: $stderr)
+    run(root: root, runner: runner)
+  rescue BuildError => e
+    io.puts(e.message)
+    1
   end
 
   def self.xcodebuild_build_command
@@ -89,5 +98,5 @@ module BuildRelease
 end
 
 if $PROGRAM_NAME == __FILE__
-  exit BuildRelease.run
+  exit BuildRelease.main
 end
