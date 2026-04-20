@@ -1,65 +1,184 @@
 import Combine
 import Foundation
 
+protocol AppViewModelTranscriptionServicing: Sendable {
+    func start(
+        eventHandler: @escaping @Sendable (TranscriptEvent) async -> Void,
+        errorHandler: @escaping @Sendable (Error) async -> Void
+    ) async throws
+    func append(frame: CapturedAudioFrame) async
+    func stop() async
+}
+
+@MainActor
+protocol AppViewModelTranslationServicing: AnyObject {
+    func prepare() async throws
+    func translate(_ text: String) async throws -> String
+}
+
+@MainActor
+protocol AppViewModelCaptionPipelineServicing: AnyObject {
+    var visibleLines: [CaptionLine] { get }
+    var appState: AppState { get }
+    func handleTranscript(_ event: TranscriptEvent) async
+    func stop()
+}
+
+private final class LiveTranscriptionServiceAdapter: AppViewModelTranscriptionServicing, @unchecked Sendable {
+    private let service: LiveTranscriptionService
+
+    init(locale: Locale) {
+        service = LiveTranscriptionService(locale: locale)
+    }
+
+    func start(
+        eventHandler: @escaping @Sendable (TranscriptEvent) async -> Void,
+        errorHandler: @escaping @Sendable (Error) async -> Void
+    ) async throws {
+        try await service.start(eventHandler: eventHandler, errorHandler: errorHandler)
+    }
+
+    func append(frame: CapturedAudioFrame) async {
+        await service.append(frame: frame)
+    }
+
+    func stop() async {
+        await service.stop()
+    }
+}
+
+@MainActor
+private final class AppleTranslationServiceAdapter: AppViewModelTranslationServicing {
+    private let service: AppleTranslationService
+
+    init(languagePair: CaptionLanguagePair) {
+        service = AppleTranslationService(languagePair: languagePair)
+    }
+
+    func prepare() async throws {
+        try await service.prepare()
+    }
+
+    func translate(_ text: String) async throws -> String {
+        try await service.translate(text)
+    }
+}
+
+@MainActor
+private final class CaptionPipelineServiceAdapter: AppViewModelCaptionPipelineServicing {
+    private let service: CaptionPipelineService
+
+    init(maximumVisibleLines: Int, translator: @escaping (String) async throws -> String) {
+        service = CaptionPipelineService(maximumVisibleLines: maximumVisibleLines, translator: translator)
+    }
+
+    var visibleLines: [CaptionLine] {
+        service.visibleLines
+    }
+
+    var appState: AppState {
+        service.appState
+    }
+
+    func handleTranscript(_ event: TranscriptEvent) async {
+        await service.handleTranscript(event)
+    }
+
+    func stop() {
+        service.stop()
+    }
+}
+
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published private(set) var appState: AppState = .idle
-    @Published private(set) var availableTargets: [CaptureTarget] = []
-    @Published var selectedTargetID: String?
     @Published private(set) var errorMessage: String?
-    @Published private(set) var selectedTargetDescription = "No source selected"
+    @Published private(set) var diagnosticsText = AppViewModel.makeDiagnosticsText(
+        capturedFrameCount: 0,
+        transcriptEventCount: 0,
+        lastTranscriptState: nil
+    )
+    @Published private(set) var selectedTargetDescription = "Mac System Audio"
 
     let overlayViewModel: OverlayViewModel
 
     private let settingsStore: AppSettingsStore
-    private let captureService = SystemAudioCaptureService()
-    private var transcriptionService: LiveTranscriptionService?
-    private var translationService: AppleTranslationService?
-    private var captionPipelineService: CaptionPipelineService?
-    private var overlayWindowManager: OverlayWindowManager?
+    private let captureService: any CaptureServicing
+    private let transcriptionServiceFactory: @MainActor (Locale) -> any AppViewModelTranscriptionServicing
+    private let translationServiceFactory: @MainActor (CaptionLanguagePair) -> any AppViewModelTranslationServicing
+    private let captionPipelineServiceFactory: @MainActor (Int, @escaping (String) async throws -> String) -> any AppViewModelCaptionPipelineServicing
+    private let overlayWindowManagerFactory: @MainActor (OverlayViewModel) -> any OverlayWindowManaging
+    private var transcriptionService: (any AppViewModelTranscriptionServicing)?
+    private var translationService: (any AppViewModelTranslationServicing)?
+    private var captionPipelineService: (any AppViewModelCaptionPipelineServicing)?
+    private var overlayWindowManager: (any OverlayWindowManaging)?
+    private var frameRelay: CapturedFrameRelay?
     private var settings: AppSettings
+    private var lifecycleToken: Int = 0
+    private var capturedFrameCount = 0
+    private var transcriptEventCount = 0
+    private var lastTranscriptState: CaptionLineState?
 
-    init(settingsStore: AppSettingsStore = AppSettingsStore()) {
+    init(
+        settingsStore: AppSettingsStore = AppSettingsStore(),
+        captureService: any CaptureServicing = SystemPlaybackCaptureService(),
+        transcriptionServiceFactory: @escaping @MainActor (Locale) -> any AppViewModelTranscriptionServicing = { (locale: Locale) -> any AppViewModelTranscriptionServicing in
+            LiveTranscriptionServiceAdapter(locale: locale)
+        },
+        translationServiceFactory: @escaping @MainActor (CaptionLanguagePair) -> any AppViewModelTranslationServicing = { (languagePair: CaptionLanguagePair) -> any AppViewModelTranslationServicing in
+            AppleTranslationServiceAdapter(languagePair: languagePair)
+        },
+        captionPipelineServiceFactory: @escaping @MainActor (Int, @escaping (String) async throws -> String) -> any AppViewModelCaptionPipelineServicing = { (maximumVisibleLines: Int, translator: @escaping (String) async throws -> String) -> any AppViewModelCaptionPipelineServicing in
+            CaptionPipelineServiceAdapter(maximumVisibleLines: maximumVisibleLines, translator: translator)
+        },
+        overlayWindowManagerFactory: @escaping @MainActor (OverlayViewModel) -> any OverlayWindowManaging = { viewModel in
+            OverlayWindowManager(viewModel: viewModel)
+        }
+    ) {
         self.settingsStore = settingsStore
+        self.captureService = captureService
+        self.transcriptionServiceFactory = transcriptionServiceFactory
+        self.translationServiceFactory = translationServiceFactory
+        self.captionPipelineServiceFactory = captionPipelineServiceFactory
+        self.overlayWindowManagerFactory = overlayWindowManagerFactory
         settings = settingsStore.load()
         overlayViewModel = OverlayViewModel(settings: settings)
     }
 
     func initialize() {
         if overlayWindowManager == nil {
-            overlayWindowManager = OverlayWindowManager(viewModel: overlayViewModel)
+            overlayWindowManager = overlayWindowManagerFactory(overlayViewModel)
             overlayWindowManager?.show()
-        }
-
-        Task {
-            await refreshTargets()
-        }
-    }
-
-    func refreshTargets() async {
-        do {
-            let targets = try await captureService.refreshDisplays()
-            availableTargets = targets
-
-            if selectedTargetID == nil {
-                selectedTargetID = targets.first?.id
-            }
-
-            updateSelectedTargetDescription()
-        } catch {
-            errorMessage = error.localizedDescription
         }
     }
 
     func start() {
+        lifecycleToken &+= 1
+        let token = lifecycleToken
         Task {
-            await startCapture()
+            await startCapture(token: token)
         }
     }
 
     func stop() {
+        lifecycleToken &+= 1
+        let transcriptionService = transcriptionService
+        let captionPipelineService = captionPipelineService
+        let frameRelay = frameRelay
+        self.transcriptionService = nil
+        translationService = nil
+        self.captionPipelineService = nil
+        self.frameRelay = nil
+        errorMessage = nil
+        appState = .idle
+        overlayViewModel.render(lines: [], appState: .idle)
+
         Task {
-            await stopCapture()
+            await stopCapture(
+                frameRelay: frameRelay,
+                transcriptionService: transcriptionService,
+                captionPipelineService: captionPipelineService
+            )
         }
     }
 
@@ -69,92 +188,294 @@ final class AppViewModel: ObservableObject {
         try? settingsStore.save(settings)
     }
 
-    private func startCapture() async {
-        guard let targetID = selectedTargetID else {
-            errorMessage = "Select a display first"
+    private func startCapture(token: Int) async {
+        guard isCurrent(token: token) else {
             return
         }
 
+        resetDiagnostics()
         errorMessage = nil
         appState = .preparing
         overlayViewModel.render(lines: [], appState: appState)
 
+        let transcriptionService = transcriptionServiceFactory(Locale(identifier: "en-US"))
+        let translationService = translationServiceFactory(settings.languagePair)
+        var captionPipelineService: (any AppViewModelCaptionPipelineServicing)?
+        var frameRelay: CapturedFrameRelay?
+
         do {
-            let transcriptionService = LiveTranscriptionService(locale: Locale(identifier: "en-US"))
-            let translationService = AppleTranslationService(languagePair: settings.languagePair)
-
             try await translationService.prepare()
+            guard isCurrent(token: token) else {
+                await stopCapture(
+                    frameRelay: frameRelay,
+                    transcriptionService: transcriptionService,
+                    captionPipelineService: captionPipelineService
+                )
+                return
+            }
 
-            let pipeline = CaptionPipelineService(
-                maximumVisibleLines: settings.maximumVisibleLines,
-                translator: { text in
+            try await transcriptionService.start(
+                eventHandler: { [weak self] event in
+                    guard let self else {
+                        return
+                    }
+
+                    await self.handleTranscriptEvent(event, token: token)
+                },
+                errorHandler: { [weak self] error in
+                    await self?.handleTranscriptionFailure(error, token: token)
+                }
+            )
+
+            guard isCurrent(token: token) else {
+                await stopCapture(
+                    frameRelay: frameRelay,
+                    transcriptionService: transcriptionService,
+                    captionPipelineService: captionPipelineService
+                )
+                return
+            }
+
+            captionPipelineService = captionPipelineServiceFactory(
+                settings.maximumVisibleLines,
+                { text in
                     try await translationService.translate(text)
                 }
             )
 
-            try await transcriptionService.start { [weak self] event in
-                guard let self else {
-                    return
-                }
-
-                await self.handleTranscriptEvent(event)
-            }
-
-            try await captureService.startCapture(
-                targetID: targetID,
-                inputHandler: { [weak transcriptionService] sampleBuffer in
-                    guard let transcriptionService else {
-                        return
-                    }
-
-                    let sample = CapturedAudioSample(sampleBuffer: sampleBuffer)
-                    Task {
-                        await transcriptionService.append(sample: sample)
-                    }
-                },
-                errorHandler: { [weak self] message in
-                    self?.errorMessage = message
-                    self?.appState = .error(.translationUnavailable)
-                }
+            let diagnosticsReporter = CapturedFrameDiagnosticsReporter(
+                viewModel: self,
+                token: token
             )
+            frameRelay = CapturedFrameRelay { [transcriptionService] frame in
+                await transcriptionService.append(frame: frame)
+            }
 
             self.transcriptionService = transcriptionService
             self.translationService = translationService
-            captionPipelineService = pipeline
+            self.captionPipelineService = captionPipelineService
+            self.frameRelay = frameRelay
+
+            try await captureService.startCapture(
+                inputHandler: { [frameRelay, diagnosticsReporter] frame in
+                    diagnosticsReporter.recordFrame()
+                    frameRelay?.enqueue(frame)
+                },
+                errorHandler: { [weak self] message in
+                    guard let self, self.isCurrent(token: token) else {
+                        return
+                    }
+
+                    self.errorMessage = message
+                    self.appState = .error(.systemAudioCaptureUnavailable)
+                }
+            )
+
+            guard isCurrent(token: token) else {
+                await stopCapture(
+                    frameRelay: frameRelay,
+                    transcriptionService: transcriptionService,
+                    captionPipelineService: captionPipelineService
+                )
+                return
+            }
+
             appState = .capturing
             overlayViewModel.render(lines: [], appState: appState)
-        } catch PermissionError.screenRecordingDenied {
-            appState = .error(.translationUnavailable)
-            errorMessage = "Screen Recording permission is required"
+        } catch PermissionError.systemAudioRecordingDenied {
+            self.frameRelay = nil
+            await stopCapture(
+                frameRelay: frameRelay,
+                transcriptionService: transcriptionService,
+                captionPipelineService: captionPipelineService
+            )
+
+            guard isCurrent(token: token) else {
+                return
+            }
+
+            appState = .error(.systemAudioCaptureUnavailable)
+            errorMessage = "System Audio Recording permission is required"
         } catch LiveTranscriptionError.speechNotAuthorized {
-            appState = .error(.translationUnavailable)
+            self.frameRelay = nil
+            await stopCapture(
+                frameRelay: frameRelay,
+                transcriptionService: transcriptionService,
+                captionPipelineService: captionPipelineService
+            )
+
+            guard isCurrent(token: token) else {
+                return
+            }
+
+            appState = .error(.transcriptionUnavailable)
             errorMessage = "Speech Recognition permission is required"
         } catch {
-            appState = .error(.translationUnavailable)
+            self.frameRelay = nil
+            await stopCapture(
+                frameRelay: frameRelay,
+                transcriptionService: transcriptionService,
+                captionPipelineService: captionPipelineService
+            )
+
+            guard isCurrent(token: token) else {
+                return
+            }
+
+            if error is CoreAudioTapError {
+                appState = .error(.systemAudioCaptureUnavailable)
+            } else if error is LiveTranscriptionError || error is SpeechTranscriberPreparationError {
+                appState = .error(.transcriptionUnavailable)
+            } else {
+                appState = .error(.translationUnavailable)
+            }
             errorMessage = error.localizedDescription
         }
     }
 
-    private func stopCapture() async {
+    private func stopCapture(
+        frameRelay: CapturedFrameRelay?,
+        transcriptionService: (any AppViewModelTranscriptionServicing)?,
+        captionPipelineService: (any AppViewModelCaptionPipelineServicing)?
+    ) async {
         await captureService.stopCapture()
+        await frameRelay?.stop()
         await transcriptionService?.stop()
-
         captionPipelineService?.stop()
-        appState = .idle
-        overlayViewModel.render(lines: [], appState: .idle)
     }
 
-    private func handleTranscriptEvent(_ event: TranscriptEvent) async {
-        guard let captionPipelineService else {
+    private func handleTranscriptEvent(_ event: TranscriptEvent, token: Int) async {
+        guard isCurrent(token: token), let captionPipelineService else {
             return
         }
 
+        recordTranscriptEvent(event)
         await captionPipelineService.handleTranscript(event)
+        guard isCurrent(token: token) else {
+            return
+        }
+
         appState = captionPipelineService.appState
         overlayViewModel.render(lines: captionPipelineService.visibleLines, appState: appState)
     }
 
-    private func updateSelectedTargetDescription() {
-        selectedTargetDescription = availableTargets.first(where: { $0.id == selectedTargetID })?.title ?? "No source selected"
+    private func handleTranscriptionFailure(_ error: Error, token: Int) async {
+        guard isCurrent(token: token) else {
+            return
+        }
+
+        let frameRelay = self.frameRelay
+        let transcriptionService = self.transcriptionService
+        let captionPipelineService = self.captionPipelineService
+        self.frameRelay = nil
+        self.transcriptionService = nil
+        translationService = nil
+        self.captionPipelineService = nil
+
+        await stopCapture(
+            frameRelay: frameRelay,
+            transcriptionService: transcriptionService,
+            captionPipelineService: captionPipelineService
+        )
+
+        guard isCurrent(token: token) else {
+            return
+        }
+
+        appState = .error(.transcriptionUnavailable)
+        errorMessage = error.localizedDescription
+        overlayViewModel.render(lines: [], appState: appState)
+    }
+
+    private func isCurrent(token: Int) -> Bool {
+        lifecycleToken == token
+    }
+
+    private func resetDiagnostics() {
+        capturedFrameCount = 0
+        transcriptEventCount = 0
+        lastTranscriptState = nil
+        diagnosticsText = Self.makeDiagnosticsText(
+            capturedFrameCount: capturedFrameCount,
+            transcriptEventCount: transcriptEventCount,
+            lastTranscriptState: lastTranscriptState
+        )
+    }
+
+    fileprivate func setCapturedFrameCount(_ count: Int, token: Int) {
+        guard isCurrent(token: token), count > capturedFrameCount else {
+            return
+        }
+
+        capturedFrameCount = count
+        diagnosticsText = Self.makeDiagnosticsText(
+            capturedFrameCount: capturedFrameCount,
+            transcriptEventCount: transcriptEventCount,
+            lastTranscriptState: lastTranscriptState
+        )
+    }
+
+    private func recordTranscriptEvent(_ event: TranscriptEvent) {
+        transcriptEventCount += 1
+        lastTranscriptState = event.state
+        diagnosticsText = Self.makeDiagnosticsText(
+            capturedFrameCount: capturedFrameCount,
+            transcriptEventCount: transcriptEventCount,
+            lastTranscriptState: lastTranscriptState
+        )
+    }
+
+    private static func makeDiagnosticsText(
+        capturedFrameCount: Int,
+        transcriptEventCount: Int,
+        lastTranscriptState: CaptionLineState?
+    ) -> String {
+        let lastTranscriptDescription = switch lastTranscriptState {
+        case .partial?:
+            "partial"
+        case .final?:
+            "final"
+        case nil:
+            "none"
+        }
+
+        return """
+        Frames received: \(capturedFrameCount)
+        Transcript events: \(transcriptEventCount)
+        Last transcript: \(lastTranscriptDescription)
+        """
+    }
+}
+
+private final class CapturedFrameDiagnosticsReporter: @unchecked Sendable {
+    private weak var viewModel: AppViewModel?
+    private let token: Int
+    private let publishInterval: Int
+    private let lock = NSLock()
+    private var count = 0
+
+    init(viewModel: AppViewModel, token: Int, publishInterval: Int = 25) {
+        self.viewModel = viewModel
+        self.token = token
+        self.publishInterval = publishInterval
+    }
+
+    func recordFrame() {
+        let snapshot: Int
+        let shouldPublish: Bool
+
+        lock.lock()
+        count += 1
+        snapshot = count
+        shouldPublish = snapshot == 1 || snapshot.isMultiple(of: publishInterval)
+        lock.unlock()
+
+        guard shouldPublish else {
+            return
+        }
+
+        Task { @MainActor [weak viewModel] in
+            viewModel?.setCapturedFrameCount(snapshot, token: token)
+        }
     }
 }

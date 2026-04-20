@@ -1,15 +1,19 @@
 import AVFoundation
-import CoreMedia
 import Foundation
 import Speech
 
-enum LiveTranscriptionError: Error {
+enum LiveTranscriptionError: Error, LocalizedError {
     case speechNotAuthorized
     case transcriberUnavailable
-}
 
-struct CapturedAudioSample: @unchecked Sendable {
-    let sampleBuffer: CMSampleBuffer
+    var errorDescription: String? {
+        switch self {
+        case .speechNotAuthorized:
+            "Speech Recognition permission is required"
+        case .transcriberUnavailable:
+            "Speech transcription is unavailable"
+        }
+    }
 }
 
 actor LiveTranscriptionService {
@@ -24,18 +28,32 @@ actor LiveTranscriptionService {
     private var resultsTask: Task<Void, Never>?
     private var targetFormat: AVAudioFormat?
     private var eventHandler: (@Sendable (TranscriptEvent) async -> Void)?
+    private var runtimeErrorHandler: (@Sendable (Error) async -> Void)?
+    private var inputClock = AnalyzerInputClock()
+    private var didReportRuntimeFailure = false
+    private var pendingConvertedFrameStartTime: CMTime?
 
     init(locale: Locale) {
         self.locale = locale
     }
 
-    func start(eventHandler: @escaping @Sendable (TranscriptEvent) async -> Void) async throws {
+    func start(
+        eventHandler: @escaping @Sendable (TranscriptEvent) async -> Void,
+        errorHandler: @escaping @Sendable (Error) async -> Void
+    ) async throws {
         let authorizationStatus = await permissionService.requestSpeechAuthorization()
         guard authorizationStatus == .authorized else {
             throw LiveTranscriptionError.speechNotAuthorized
         }
 
-        let transcriber = SpeechTranscriber(locale: locale, preset: .timeIndexedProgressiveTranscription)
+        let resolvedLocale = try await SpeechTranscriberPreparation(
+            requestedLocale: locale,
+            preset: .timeIndexedProgressiveTranscription
+        ).prepare()
+        let transcriber = SpeechTranscriber(
+            locale: resolvedLocale,
+            preset: .timeIndexedProgressiveTranscription
+        )
         let compatibleFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
         let analyzer = SpeechAnalyzer(modules: [transcriber])
 
@@ -46,14 +64,23 @@ actor LiveTranscriptionService {
         }
 
         self.eventHandler = eventHandler
+        runtimeErrorHandler = errorHandler
         self.analyzer = analyzer
         self.transcriber = transcriber
         targetFormat = compatibleFormat
+        inputClock = AnalyzerInputClock()
+        didReportRuntimeFailure = false
+        pendingConvertedFrameStartTime = nil
+        audioBufferConverter.reset()
 
         analysisTask = Task {
             do {
                 try await analyzer.start(inputSequence: stream)
             } catch {
+                guard !Task.isCancelled else {
+                    return
+                }
+                await self.reportRuntimeFailure(error)
             }
         }
 
@@ -67,34 +94,53 @@ actor LiveTranscriptionService {
                     await eventHandler(transcript)
                 }
             } catch {
+                guard !Task.isCancelled else {
+                    return
+                }
+                await self.reportRuntimeFailure(error)
             }
         }
     }
 
-    func append(sample: CapturedAudioSample) async {
+    func append(frame: CapturedAudioFrame) async {
         guard let continuation else {
             return
         }
 
         do {
-            let sampleBuffer = sample.sampleBuffer
-            let buffer = try audioBufferConverter.pcmBuffer(from: sampleBuffer)
             let inputBuffer: AVAudioPCMBuffer
+            let requestedStartTime = pendingConvertedFrameStartTime ?? frame.when
 
             if let targetFormat {
-                inputBuffer = try audioBufferConverter.convert(buffer, to: targetFormat)
+                inputBuffer = try audioBufferConverter.convert(frame.buffer, to: targetFormat)
             } else {
-                inputBuffer = buffer
+                inputBuffer = frame.buffer
             }
 
-            let presentationTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-            continuation.yield(AnalyzerInput(buffer: inputBuffer, bufferStartTime: presentationTimeStamp))
+            guard inputBuffer.frameLength > 0 else {
+                if pendingConvertedFrameStartTime == nil {
+                    pendingConvertedFrameStartTime = frame.when
+                }
+                return
+            }
+
+            pendingConvertedFrameStartTime = nil
+
+            let normalizedStartTime = inputClock.normalizedStartTime(
+                requestedStartTime: requestedStartTime,
+                frameLength: inputBuffer.frameLength,
+                sampleRate: inputBuffer.format.sampleRate
+            )
+            continuation.yield(AnalyzerInput(buffer: inputBuffer, bufferStartTime: normalizedStartTime))
         } catch {
+            await reportRuntimeFailure(error)
         }
     }
 
     func stop() async {
         continuation?.finish()
+        runtimeErrorHandler = nil
+        didReportRuntimeFailure = false
 
         if let analyzer {
             try? await analyzer.finalizeAndFinishThroughEndOfInput()
@@ -110,5 +156,21 @@ actor LiveTranscriptionService {
         resultsTask = nil
         targetFormat = nil
         eventHandler = nil
+        inputClock = AnalyzerInputClock()
+        pendingConvertedFrameStartTime = nil
+        audioBufferConverter.reset()
+    }
+
+    private func reportRuntimeFailure(_ error: Error) async {
+        guard !didReportRuntimeFailure else {
+            return
+        }
+
+        didReportRuntimeFailure = true
+        guard let runtimeErrorHandler else {
+            return
+        }
+
+        await runtimeErrorHandler(error)
     }
 }

@@ -3,7 +3,24 @@ import Combine
 import SwiftUI
 
 @MainActor
-final class OverlayWindowManager {
+protocol OverlayWindowManaging: AnyObject {
+    func show()
+}
+
+struct OverlayInteractionConfiguration: Equatable {
+    let ignoresMouseEvents: Bool
+    let isMovableByWindowBackground: Bool
+
+    static func make(isClickThroughEnabled: Bool) -> OverlayInteractionConfiguration {
+        OverlayInteractionConfiguration(
+            ignoresMouseEvents: isClickThroughEnabled,
+            isMovableByWindowBackground: !isClickThroughEnabled
+        )
+    }
+}
+
+@MainActor
+final class OverlayWindowManager: OverlayWindowManaging {
     private let panel: NSPanel
     private var cancellables: Set<AnyCancellable> = []
 
@@ -29,17 +46,26 @@ final class OverlayWindowManager {
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.hidesOnDeactivate = false
-        panel.ignoresMouseEvents = viewModel.isClickThroughEnabled
         panel.contentView = NSHostingView(rootView: OverlayView(viewModel: viewModel))
+        applyInteractionConfiguration(
+            OverlayInteractionConfiguration.make(isClickThroughEnabled: viewModel.isClickThroughEnabled)
+        )
 
         viewModel.$isClickThroughEnabled
             .sink { [weak panel] isClickThroughEnabled in
-                panel?.ignoresMouseEvents = isClickThroughEnabled
+                let configuration = OverlayInteractionConfiguration.make(isClickThroughEnabled: isClickThroughEnabled)
+                panel?.ignoresMouseEvents = configuration.ignoresMouseEvents
+                panel?.isMovableByWindowBackground = configuration.isMovableByWindowBackground
             }
             .store(in: &cancellables)
     }
 
     func show() {
         panel.orderFrontRegardless()
+    }
+
+    private func applyInteractionConfiguration(_ configuration: OverlayInteractionConfiguration) {
+        panel.ignoresMouseEvents = configuration.ignoresMouseEvents
+        panel.isMovableByWindowBackground = configuration.isMovableByWindowBackground
     }
 }

@@ -11,7 +11,7 @@ struct AppSettings: Codable, Equatable, Sendable {
         overlayOpacity: 0.82,
         fontSize: 24,
         maximumVisibleLines: 4,
-        isClickThroughEnabled: true,
+        isClickThroughEnabled: false,
         languagePair: .defaultPair
     )
 }

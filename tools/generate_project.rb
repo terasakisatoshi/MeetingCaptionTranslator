@@ -72,6 +72,8 @@ def write_seed_files
           <string>1</string>
           <key>LSMinimumSystemVersion</key>
           <string>26.0</string>
+          <key>NSAudioCaptureUsageDescription</key>
+          <string>This app captures Mac playback audio to transcribe live captions.</string>
           <key>NSSpeechRecognitionUsageDescription</key>
           <string>This app transcribes captured system audio into captions.</string>
       </dict>
@@ -155,7 +157,7 @@ test_target.add_dependency(app_target)
 [
   "AppKit",
   "AVFoundation",
-  "ScreenCaptureKit",
+  "CoreAudio",
   "Speech",
   "Translation",
   "SwiftUI"

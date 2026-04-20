@@ -2,13 +2,35 @@
 import CoreMedia
 import Foundation
 
-enum AudioBufferConversionError: Error {
+enum AudioBufferConversionError: Error, LocalizedError {
     case unsupportedFormat
     case coreMedia(OSStatus)
     case bufferCreationFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupportedFormat:
+            "Audio conversion unsupported for the captured system audio format"
+        case .coreMedia(let status):
+            "Core Media audio conversion failed with OSStatus \(status)"
+        case .bufferCreationFailed:
+            "Audio conversion failed to allocate a PCM buffer"
+        }
+    }
 }
 
 final class AudioBufferConverter {
+    private struct FormatKey: Equatable {
+        let inputCommonFormat: AVAudioCommonFormat
+        let inputSampleRate: Double
+        let inputChannelCount: AVAudioChannelCount
+        let inputIsInterleaved: Bool
+        let outputCommonFormat: AVAudioCommonFormat
+        let outputSampleRate: Double
+        let outputChannelCount: AVAudioChannelCount
+        let outputIsInterleaved: Bool
+    }
+
     private final class ConversionSource: @unchecked Sendable {
         private let lock = NSLock()
         private let buffer: AVAudioPCMBuffer
@@ -30,6 +52,9 @@ final class AudioBufferConverter {
             return buffer
         }
     }
+
+    private var converter: AVAudioConverter?
+    private var converterKey: FormatKey?
 
     func pcmBuffer(from sampleBuffer: CMSampleBuffer) throws -> AVAudioPCMBuffer {
         guard
@@ -82,9 +107,7 @@ final class AudioBufferConverter {
             return buffer
         }
 
-        guard let converter = AVAudioConverter(from: buffer.format, to: targetFormat) else {
-            throw AudioBufferConversionError.unsupportedFormat
-        }
+        let converter = try converterForConversion(from: buffer.format, to: targetFormat)
 
         let ratio = targetFormat.sampleRate / buffer.format.sampleRate
         let outputFrameCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio + 32)
@@ -113,11 +136,41 @@ final class AudioBufferConverter {
         return outputBuffer
     }
 
+    func reset() {
+        converter = nil
+        converterKey = nil
+    }
+
     private func matches(_ lhs: AVAudioFormat, _ rhs: AVAudioFormat) -> Bool {
         lhs.commonFormat == rhs.commonFormat &&
             lhs.channelCount == rhs.channelCount &&
             lhs.sampleRate == rhs.sampleRate &&
             lhs.isInterleaved == rhs.isInterleaved
+    }
+
+    private func converterForConversion(from inputFormat: AVAudioFormat, to outputFormat: AVAudioFormat) throws -> AVAudioConverter {
+        let key = FormatKey(
+            inputCommonFormat: inputFormat.commonFormat,
+            inputSampleRate: inputFormat.sampleRate,
+            inputChannelCount: inputFormat.channelCount,
+            inputIsInterleaved: inputFormat.isInterleaved,
+            outputCommonFormat: outputFormat.commonFormat,
+            outputSampleRate: outputFormat.sampleRate,
+            outputChannelCount: outputFormat.channelCount,
+            outputIsInterleaved: outputFormat.isInterleaved
+        )
+
+        if let converter, converterKey == key {
+            return converter
+        }
+
+        guard let newConverter = AVAudioConverter(from: inputFormat, to: outputFormat) else {
+            throw AudioBufferConversionError.unsupportedFormat
+        }
+
+        converter = newConverter
+        converterKey = key
+        return newConverter
     }
 
     private func allocateAudioBufferList(maximumBuffers: Int) -> (unsafeMutablePointer: UnsafeMutablePointer<AudioBufferList>, unsafePointer: UnsafePointer<AudioBufferList>, allocatedSize: Int, deallocate: () -> Void) {

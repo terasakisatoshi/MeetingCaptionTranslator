@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -14,18 +15,11 @@ struct ContentView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Source")
+                Text("Audio Input")
                     .font(.headline)
 
-                Picker("Source", selection: $viewModel.selectedTargetID) {
-                    ForEach(viewModel.availableTargets) { target in
-                        Text("\(target.title) • \(target.subtitle)").tag(Optional(target.id))
-                    }
-                }
-                .pickerStyle(.menu)
-
                 Text(viewModel.selectedTargetDescription)
-                    .font(.caption)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
 
@@ -35,12 +29,6 @@ struct ContentView: View {
             ))
 
             HStack(spacing: 12) {
-                Button("Refresh Sources") {
-                    Task {
-                        await viewModel.refreshTargets()
-                    }
-                }
-
                 Button("Start") {
                     viewModel.start()
                 }
@@ -58,16 +46,30 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
 
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Diagnostics")
+                    .font(.headline)
+                SelectableMessageText(
+                    viewModel.diagnosticsText,
+                    textColor: .secondaryLabelColor,
+                    font: .monospacedSystemFont(ofSize: NSFont.preferredFont(forTextStyle: .caption1).pointSize, weight: .regular)
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .foregroundStyle(.red)
-                    .font(.callout)
+                SelectableMessageText(
+                    errorMessage,
+                    textColor: .systemRed,
+                    font: .preferredFont(forTextStyle: .callout)
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             Spacer()
         }
         .padding(24)
-        .frame(minWidth: 520, minHeight: 340)
+        .frame(minWidth: 420, minHeight: 280)
         .task {
             viewModel.initialize()
         }
