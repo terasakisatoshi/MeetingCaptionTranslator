@@ -28,6 +28,13 @@ xcodebuild build \
   CODE_SIGNING_ALLOWED=NO
 ```
 
+## Release Artifact
+```bash
+ruby tools/build_release.rb
+```
+
+Copies the built app bundle to `dist/MeetingCaptionTranslator.app`.
+
 ## Test
 ```bash
 xcodebuild test \
