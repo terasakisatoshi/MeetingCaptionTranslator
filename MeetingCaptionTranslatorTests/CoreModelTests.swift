@@ -30,4 +30,22 @@ final class CoreModelTests: XCTestCase {
         XCTAssertTrue(state.isRunning)
         XCTAssertEqual(state.statusText, "Translation unavailable")
     }
+
+    func test_app_state_exposes_system_audio_capture_error_status() {
+        let state = AppState.error(.systemAudioCaptureUnavailable)
+
+        XCTAssertFalse(state.isRunning)
+        XCTAssertEqual(state.statusText, "System audio capture unavailable")
+    }
+
+    func test_app_state_exposes_transcription_error_status() {
+        let state = AppState.error(.transcriptionUnavailable)
+
+        XCTAssertFalse(state.isRunning)
+        XCTAssertEqual(state.statusText, "Transcription unavailable")
+    }
+
+    func test_default_settings_start_with_click_through_disabled() {
+        XCTAssertFalse(AppSettings.defaultValue.isClickThroughEnabled)
+    }
 }
