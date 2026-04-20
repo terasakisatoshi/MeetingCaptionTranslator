@@ -5,6 +5,7 @@ vendor/bundle/
 
 DerivedData/
 build/
+.worktrees/
 *.xcresult
 
 MeetingCaptionTranslator.xcodeproj/xcuserdata/
