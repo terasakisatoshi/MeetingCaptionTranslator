@@ -19,6 +19,19 @@ bundle install
 bundle exec ruby tools/generate_project.rb
 ```
 
+## Get the App
+To obtain a runnable app bundle from this repository:
+
+```bash
+git clone git@github.com:terasakisatoshi/MeetingCaptionTranslator.git
+cd MeetingCaptionTranslator
+bundle install
+bundle exec ruby tools/generate_project.rb
+ruby tools/build_release.rb
+```
+
+The built app is written to `dist/MeetingCaptionTranslator.app`.
+
 ## Build
 ```bash
 xcodebuild build \
