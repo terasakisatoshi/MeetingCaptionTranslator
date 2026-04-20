@@ -1,4 +1,4 @@
-# LiveCaptionTranslator
+# MeetingCaptionTranslator
 
 macOS app for capturing English system audio, transcribing it with Apple Speech APIs, translating it to Japanese, and rendering the result in an always-on-top overlay.
 
@@ -62,4 +62,3 @@ Then select a display in the control window and press `Start`.
 ## Notes
 - Source/target language is currently fixed to English → Japanese through `CaptionLanguagePair.defaultPair`.
 - After adding or removing source files, rerun `bundle exec ruby tools/generate_project.rb`.
-# MeetingCaptionTranslator
