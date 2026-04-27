@@ -1,29 +1,29 @@
 # MeetingCaptionTranslator
 
-macOS app for capturing English system audio through a fixed Core Audio tap, transcribing it with Apple Speech APIs, translating it to Japanese, and rendering the result in an always-on-top overlay.
+固定の Core Audio tap で英語のシステム音声をキャプチャし、Apple Speech API で文字起こしして日本語に翻訳し、常に最前面に表示されるオーバーレイへ描画する macOS アプリです。
 
-## Requirements
+## 必要要件
 - macOS 26.0+
-- Xcode 16+ with the macOS 26 SDK
-- Ruby/Bundler for project generation
+- macOS 26 SDK を含む Xcode 16+
+- プロジェクト生成用の Ruby/Bundler
 
-## Project Layout
-- `MeetingCaptionTranslator/`: app source
-- `MeetingCaptionTranslatorTests/`: XCTest suite
-- `tools/generate_project.rb`: regenerates the `.xcodeproj`
-- `docs/plans/`: design and implementation notes
+## プロジェクト構成
+- `MeetingCaptionTranslator/`: アプリのソースコード
+- `MeetingCaptionTranslatorTests/`: XCTest テストスイート
+- `tools/generate_project.rb`: `.xcodeproj` を再生成するスクリプト
+- `docs/plans/`: 設計および実装メモ
 
-## Setup
+## セットアップ
 ```bash
 bundle install
 bundle exec ruby tools/generate_project.rb
 ```
 
-## Get the App
-To obtain a runnable app bundle from this repository:
+## アプリを入手する
+このリポジトリから実行可能なアプリバンドルを作成するには、次の手順を実行します。
 
-- Install Xcode, Ruby, and Bundler first.
-- Use the HTTPS clone URL below unless you already have GitHub SSH access configured.
+- 先に Xcode、Ruby、Bundler をインストールしてください。
+- GitHub SSH アクセスをすでに設定している場合を除き、以下の HTTPS clone URL を使用してください。
 
 ```bash
 git clone https://github.com/terasakisatoshi/MeetingCaptionTranslator.git
@@ -33,9 +33,9 @@ bundle exec ruby tools/generate_project.rb
 ruby tools/build_release.rb
 ```
 
-The built app is written to `dist/MeetingCaptionTranslator.app`.
+ビルドされたアプリは `dist/MeetingCaptionTranslator.app` に出力されます。
 
-## Build
+## ビルド
 ```bash
 xcodebuild build \
   -project MeetingCaptionTranslator.xcodeproj \
@@ -43,16 +43,16 @@ xcodebuild build \
   -destination 'platform=macOS'
 ```
 
-## Release Artifact
+## リリース成果物
 ```bash
 ruby tools/build_release.rb
 ```
 
-Copies the built app bundle to `dist/MeetingCaptionTranslator.app`.
-Validate the release path with `ruby tools/build_release_test.rb`.
-This artifact uses the project's default signing settings.
+ビルド済みのアプリバンドルを `dist/MeetingCaptionTranslator.app` にコピーします。
+リリース先のパスは `ruby tools/build_release_test.rb` で検証できます。
+この成果物では、プロジェクトのデフォルト署名設定が使用されます。
 
-## Test
+## テスト
 ```bash
 xcodebuild test \
   -project MeetingCaptionTranslator.xcodeproj \
@@ -60,23 +60,23 @@ xcodebuild test \
   -destination 'platform=macOS'
 ```
 
-## Run
-Before building or running, open `MeetingCaptionTranslator.xcodeproj` in Xcode and choose a Team and signing identity in `Signing & Capabilities`. For local development, `Apple Development` is sufficient. On first use, allow:
+## 実行
+ビルドまたは実行する前に、Xcode で `MeetingCaptionTranslator.xcodeproj` を開き、`Signing & Capabilities` で Team と署名 ID を選択してください。ローカル開発では `Apple Development` で十分です。初回使用時には、次の権限を許可してください。
 - `System Audio Recording`
 - `Speech Recognition`
 
-Then press `Start` to capture the Mac system audio source and begin transcription.
+その後、`Start` を押すと Mac のシステム音声ソースをキャプチャし、文字起こしを開始します。
 
-If you intentionally need an unsigned build for diagnostics, override the command with `CODE_SIGNING_ALLOWED=NO`. Do not use that build for permission testing. macOS TCC uses the app signature to remember privacy grants, so unsigned builds can re-prompt for `Speech Recognition` on every launch.
+診断目的で意図的に未署名ビルドが必要な場合は、コマンドに `CODE_SIGNING_ALLOWED=NO` を指定して上書きしてください。そのビルドを権限テストに使用しないでください。macOS TCC はアプリの署名を使ってプライバシー許可を記憶するため、未署名ビルドでは起動のたびに `Speech Recognition` の許可を再要求される可能性があります。
 
-## Architecture
-- `SystemPlaybackCaptureService`: Core Audio tap for the Mac system audio source
+## アーキテクチャ
+- `SystemPlaybackCaptureService`: Mac のシステム音声ソース用 Core Audio tap
 - `LiveTranscriptionService`: `SpeechAnalyzer` / `SpeechTranscriber`
 - `AppleTranslationService`: `TranslationSession`
-- `CaptionPipelineService`: partial/final caption coordination
-- `OverlayWindowManager`: always-on-top AppKit overlay window
+- `CaptionPipelineService`: 部分字幕と確定字幕の調整
+- `OverlayWindowManager`: 常に最前面に表示される AppKit オーバーレイウィンドウ
 
-## Notes
-- Source/target language is currently fixed to English → Japanese through `CaptionLanguagePair.defaultPair`.
-- The capture source is fixed to the Mac system audio output; there is no display picker.
-- After adding or removing source files, rerun `bundle exec ruby tools/generate_project.rb`.
+## 補足
+- 入力/出力言語は現在、`CaptionLanguagePair.defaultPair` により英語 -> 日本語に固定されています。
+- キャプチャソースは Mac のシステム音声出力に固定されており、ディスプレイ選択機能はありません。
+- ソースファイルを追加または削除した後は、`bundle exec ruby tools/generate_project.rb` を再実行してください。
