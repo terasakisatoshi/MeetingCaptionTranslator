@@ -7,6 +7,25 @@ final class CoreModelTests: XCTestCase {
         XCTAssertEqual(CaptionLanguagePair.defaultPair.targetLanguage, "ja")
     }
 
+    func test_caption_language_pair_exposes_supported_translation_directions() {
+        XCTAssertEqual(CaptionLanguagePair.supportedPairs, [
+            .englishToJapanese,
+            .japaneseToEnglish
+        ])
+    }
+
+    func test_caption_language_pair_exposes_speech_locale_and_display_title() {
+        XCTAssertEqual(CaptionLanguagePair.englishToJapanese.sourceLanguage, "en")
+        XCTAssertEqual(CaptionLanguagePair.englishToJapanese.targetLanguage, "ja")
+        XCTAssertEqual(CaptionLanguagePair.englishToJapanese.speechLocaleIdentifier, "en-US")
+        XCTAssertEqual(CaptionLanguagePair.englishToJapanese.displayTitle, "English -> Japanese")
+
+        XCTAssertEqual(CaptionLanguagePair.japaneseToEnglish.sourceLanguage, "ja")
+        XCTAssertEqual(CaptionLanguagePair.japaneseToEnglish.targetLanguage, "en")
+        XCTAssertEqual(CaptionLanguagePair.japaneseToEnglish.speechLocaleIdentifier, "ja-JP")
+        XCTAssertEqual(CaptionLanguagePair.japaneseToEnglish.displayTitle, "Japanese -> English")
+    }
+
     func test_caption_line_can_apply_partial_update() {
         let line = CaptionLine(
             id: UUID(),

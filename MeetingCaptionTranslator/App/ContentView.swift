@@ -10,7 +10,7 @@ struct ContentView: View {
                 Text("Live Caption Translator")
                     .font(.title.bold())
 
-                Text("English system audio to Japanese overlay subtitles")
+                Text("System audio to bilingual overlay subtitles")
                     .foregroundStyle(.secondary)
             }
 
@@ -21,6 +21,25 @@ struct ContentView: View {
                 Text(viewModel.selectedTargetDescription)
                     .font(.body)
                     .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Language Direction")
+                    .font(.headline)
+
+                Picker(
+                    "Language Direction",
+                    selection: Binding(
+                        get: { viewModel.languagePair },
+                        set: { viewModel.updateLanguagePair($0) }
+                    )
+                ) {
+                    ForEach(CaptionLanguagePair.supportedPairs) { pair in
+                        Text(pair.displayTitle).tag(pair)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
             }
 
             VStack(alignment: .leading, spacing: 12) {
