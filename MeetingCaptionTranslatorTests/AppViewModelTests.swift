@@ -104,6 +104,38 @@ final class AppViewModelTests: XCTestCase {
         XCTAssertTrue(captureService.didEnterStartCapture)
     }
 
+    func test_start_usesSelectedLanguagePairForSpeechAndTranslation() async throws {
+        let store = makeSettingsStore()
+        var settings = store.load()
+        settings.languagePair = .japaneseToEnglish
+        try store.save(settings)
+
+        let captureService = RecordingCaptureService()
+        let transcriptionService = RecordingTranscriptionService()
+        let translationService = RecordingTranslationService()
+        var requestedLocale: Locale?
+        var requestedLanguagePair: CaptionLanguagePair?
+        let viewModel = AppViewModel(
+            settingsStore: store,
+            captureService: captureService,
+            transcriptionServiceFactory: { locale in
+                requestedLocale = locale
+                return transcriptionService
+            },
+            translationServiceFactory: { languagePair in
+                requestedLanguagePair = languagePair
+                return translationService
+            },
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
+        )
+
+        viewModel.start()
+        await waitUntil { captureService.didEnterStartCapture }
+
+        XCTAssertEqual(requestedLocale?.identifier, "ja-JP")
+        XCTAssertEqual(requestedLanguagePair, .japaneseToEnglish)
+    }
+
     func test_stop_preventsStaleStartFromOverwritingIdleState() async {
         let captureService = DeferredCaptureService()
         let transcriptionService = RecordingTranscriptionService()
@@ -210,6 +242,42 @@ final class AppViewModelTests: XCTestCase {
             restored.maximumVisibleLines,
             AppSettings.derivedMaximumVisibleLines(overlayHeight: 1080, fontSize: 24)
         )
+    }
+
+    func test_updateLanguagePair_persistsSelectionWhileIdle() {
+        let store = makeSettingsStore()
+        let viewModel = AppViewModel(
+            settingsStore: store,
+            captureService: FakeCaptureService(),
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
+        )
+
+        viewModel.updateLanguagePair(.japaneseToEnglish)
+
+        XCTAssertEqual(viewModel.languagePair, .japaneseToEnglish)
+        XCTAssertEqual(store.load().languagePair, .japaneseToEnglish)
+    }
+
+    func test_updateLanguagePair_ignoresSelectionWhileRunning() async throws {
+        let store = makeSettingsStore()
+        let captureService = RecordingCaptureService()
+        let transcriptionService = RecordingTranscriptionService()
+        let translationService = RecordingTranslationService()
+        let viewModel = AppViewModel(
+            settingsStore: store,
+            captureService: captureService,
+            transcriptionServiceFactory: { _ in transcriptionService },
+            translationServiceFactory: { _ in translationService },
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
+        )
+
+        viewModel.start()
+        await waitUntil { captureService.didEnterStartCapture }
+
+        viewModel.updateLanguagePair(.japaneseToEnglish)
+
+        XCTAssertEqual(viewModel.languagePair, .englishToJapanese)
+        XCTAssertEqual(store.load().languagePair, .englishToJapanese)
     }
 
     func test_initialize_persistsManualOverlayResize() async {

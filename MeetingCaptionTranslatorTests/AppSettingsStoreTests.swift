@@ -67,4 +67,31 @@ final class AppSettingsStoreTests: XCTestCase {
         )
         XCTAssertEqual(restored.languagePair, .defaultPair)
     }
+
+    func test_store_loads_legacy_language_pair_without_speech_locale_fields() throws {
+        let suiteName = "AppSettingsStoreTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let legacyPayload = """
+        {
+          "overlayOpacity": 0.7,
+          "fontSize": 26,
+          "maximumVisibleLines": 5,
+          "overlayWidth": 960,
+          "overlayHeight": 220,
+          "languagePair": {
+            "sourceLanguage": "ja",
+            "targetLanguage": "en"
+          }
+        }
+        """
+        defaults.set(try XCTUnwrap(legacyPayload.data(using: .utf8)), forKey: "app_settings")
+
+        let restored = AppSettingsStore(userDefaults: defaults).load()
+
+        XCTAssertEqual(restored.languagePair, .japaneseToEnglish)
+        XCTAssertEqual(restored.languagePair.speechLocaleIdentifier, "ja-JP")
+        XCTAssertEqual(restored.languagePair.displayTitle, "Japanese -> English")
+    }
 }

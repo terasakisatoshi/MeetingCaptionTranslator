@@ -1,6 +1,6 @@
 # MeetingCaptionTranslator
 
-固定の Core Audio tap で英語のシステム音声をキャプチャし、Apple Speech API で文字起こしして日本語に翻訳し、常に最前面に表示されるオーバーレイへ描画する macOS アプリです。
+固定の Core Audio tap でシステム音声をキャプチャし、Apple Speech API で文字起こしして、英語から日本語または日本語から英語へ翻訳し、常に最前面に表示されるオーバーレイへ描画する macOS アプリです。
 
 ## 必要要件
 - macOS 26.0+
@@ -65,7 +65,7 @@ xcodebuild test \
 - `System Audio Recording`
 - `Speech Recognition`
 
-その後、`Start` を押すと Mac のシステム音声ソースをキャプチャし、文字起こしを開始します。
+必要に応じて `Language Direction` で `English -> Japanese` または `Japanese -> English` を選択します。その後、`Start` を押すと Mac のシステム音声ソースをキャプチャし、文字起こしを開始します。言語方向は停止中に変更でき、選択内容は保存されます。
 
 診断目的で意図的に未署名ビルドが必要な場合は、コマンドに `CODE_SIGNING_ALLOWED=NO` を指定して上書きしてください。そのビルドを権限テストに使用しないでください。macOS TCC はアプリの署名を使ってプライバシー許可を記憶するため、未署名ビルドでは起動のたびに `Speech Recognition` の許可を再要求される可能性があります。
 
@@ -77,6 +77,6 @@ xcodebuild test \
 - `OverlayWindowManager`: 常に最前面に表示される AppKit オーバーレイウィンドウ
 
 ## 補足
-- 入力/出力言語は現在、`CaptionLanguagePair.defaultPair` により英語 -> 日本語に固定されています。
+- 入力/出力言語は `Language Direction` で英語 -> 日本語または日本語 -> 英語を選択できます。既定値は `CaptionLanguagePair.defaultPair` により英語 -> 日本語です。
 - キャプチャソースは Mac のシステム音声出力に固定されており、ディスプレイ選択機能はありません。
 - ソースファイルを追加または削除した後は、`bundle exec ruby tools/generate_project.rb` を再実行してください。

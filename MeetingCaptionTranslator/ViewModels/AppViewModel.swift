@@ -109,6 +109,7 @@ final class AppViewModel: ObservableObject {
         lastTranscriptState: nil
     )
     @Published private(set) var selectedTargetDescription = "Mac System Audio"
+    @Published private(set) var languagePair: CaptionLanguagePair
 
     let overlayViewModel: OverlayViewModel
 
@@ -151,7 +152,9 @@ final class AppViewModel: ObservableObject {
         self.translationServiceFactory = translationServiceFactory
         self.captionPipelineServiceFactory = captionPipelineServiceFactory
         self.overlayWindowManagerFactory = overlayWindowManagerFactory
-        settings = settingsStore.load()
+        let loadedSettings = settingsStore.load()
+        settings = loadedSettings
+        languagePair = loadedSettings.languagePair
         overlayViewModel = OverlayViewModel(settings: settings)
     }
 
@@ -234,6 +237,16 @@ final class AppViewModel: ObservableObject {
         try? settingsStore.save(settings)
     }
 
+    func updateLanguagePair(_ languagePair: CaptionLanguagePair) {
+        guard !appState.isRunning, appState != .preparing else {
+            return
+        }
+
+        settings.languagePair = languagePair
+        self.languagePair = languagePair
+        try? settingsStore.save(settings)
+    }
+
     private func handleOverlayWindowResized(to size: CGSize) {
         settings.overlayWidth = AppSettings.clamp(size.width, to: AppSettings.overlayWidthRange)
         settings.overlayHeight = AppSettings.clamp(size.height, to: AppSettings.overlayHeightRange)
@@ -259,7 +272,9 @@ final class AppViewModel: ObservableObject {
         appState = .preparing
         overlayViewModel.render(lines: [], appState: appState)
 
-        let transcriptionService = transcriptionServiceFactory(Locale(identifier: "en-US"))
+        let transcriptionService = transcriptionServiceFactory(
+            Locale(identifier: settings.languagePair.speechLocaleIdentifier)
+        )
         let translationService = translationServiceFactory(settings.languagePair)
         var captionPipelineService: (any AppViewModelCaptionPipelineServicing)?
         var frameRelay: CapturedFrameRelay?
