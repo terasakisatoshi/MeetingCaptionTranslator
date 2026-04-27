@@ -96,7 +96,7 @@ class BuildReleaseTest < Minitest::Test
           assert_equal 0, result
           assert_equal expected_root, runner.cwd_during_build
           assert_equal expected_root, runner.cwd_during_settings
-          assert_equal ["xcodebuild", "build", "-project", "MeetingCaptionTranslator.xcodeproj", "-scheme", "MeetingCaptionTranslator", "-configuration", "Release", "-destination", "platform=macOS", "CODE_SIGNING_ALLOWED=NO", "ONLY_ACTIVE_ARCH=NO", "ARCHS=arm64 x86_64"], runner.build_args
+          assert_equal ["xcodebuild", "build", "-project", "MeetingCaptionTranslator.xcodeproj", "-scheme", "MeetingCaptionTranslator", "-configuration", "Release", "-destination", "platform=macOS", "ONLY_ACTIVE_ARCH=NO", "ARCHS=arm64 x86_64"], runner.build_args
           assert_equal ["xcodebuild", "-showBuildSettings", "-project", "MeetingCaptionTranslator.xcodeproj", "-scheme", "MeetingCaptionTranslator", "-configuration", "Release", "-destination", "platform=macOS"], runner.capture_args
           assert_equal ["MeetingCaptionTranslator.app"], Dir.children(File.join(root, "dist"))
         end

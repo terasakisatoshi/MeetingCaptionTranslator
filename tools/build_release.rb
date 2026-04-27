@@ -53,7 +53,6 @@ module BuildRelease
       "-scheme", SCHEME,
       "-configuration", CONFIGURATION,
       "-destination", DESTINATION,
-      "CODE_SIGNING_ALLOWED=NO",
       "ONLY_ACTIVE_ARCH=NO",
       "ARCHS=arm64 x86_64"
     ]
