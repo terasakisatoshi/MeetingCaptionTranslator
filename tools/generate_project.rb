@@ -202,6 +202,7 @@ app_target.build_configurations.each do |config|
   config.build_settings["LD_RUNPATH_SEARCH_PATHS"] = ["$(inherited)", "@executable_path/../Frameworks"]
   config.build_settings["PRODUCT_NAME"] = "MeetingCaptionTranslator"
   config.build_settings["ENABLE_APP_SANDBOX"] = "NO"
+  config.build_settings["ASSETCATALOG_COMPILER_APPICON_NAME"] = "AppIcon"
 end
 
 test_target.build_configurations.each do |config|

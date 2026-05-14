@@ -7,6 +7,7 @@ DerivedData/
 build/
 dist/
 .worktrees/
+.superpowers/
 *.xcresult
 
 MeetingCaptionTranslator.xcodeproj/xcuserdata/
