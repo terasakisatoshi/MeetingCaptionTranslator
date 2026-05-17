@@ -13,7 +13,7 @@ Follow Swift 6 conventions: 4-space indentation, one top-level type per file whe
 Tests use `XCTest`. Mirror production names in test files, for example `CaptionPipelineServiceTests.swift` for `CaptionPipelineService.swift`. Name test methods by behavior, such as `test_translation_failure_falls_back_to_english_only`. Add unit coverage for new model or service behavior before wiring UI changes. Run the full `xcodebuild test ...` command before claiming completion.
 
 ## Commit & Pull Request Guidelines
-This workspace is not currently a Git repository, so no local commit history is available to infer conventions. When the repo is versioned, use short Conventional Commit style messages such as `feat: add overlay controls` or `fix: handle denied screen recording permission`. PRs should describe user-visible behavior, list verification commands, and include screenshots for control window or overlay UI changes.
+Use short Conventional Commit style messages such as `feat: add overlay controls` or `fix: handle denied screen recording permission`. PRs should describe user-visible behavior, list verification commands, and include screenshots for control window or overlay UI changes.
 
 ## Security & Configuration Tips
 The app relies on `Screen Recording` and `Speech Recognition` permissions. Do not hardcode secrets or external service credentials. Keep `Info.plist` usage descriptions accurate, and note any new permission or OS-version requirement in both `README.md` and `docs/plans/`.
