@@ -1,5 +1,7 @@
 # MeetingCaptionTranslator
 
+![](./demo.png)
+
 固定の Core Audio tap でシステム音声をキャプチャし、Apple Speech API で文字起こしして、英語から日本語または日本語から英語へ翻訳し、常に最前面に表示されるオーバーレイへ描画する macOS アプリです。
 
 ## 必要要件
