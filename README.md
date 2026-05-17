@@ -20,6 +20,13 @@ bundle install
 bundle exec ruby tools/generate_project.rb
 ```
 
+## macOS の Live Caption について
+macOS の Live Caption は、Mac 上のアプリ音声や周囲の会話をリアルタイムに文字起こしするアクセシビリティ機能です。Apple の案内では、Live Caption の音声処理はデバイス上で行われ、初回有効化時には言語データが Mac にダウンロードされます。
+
+このアプリは Live Caption と同じ Apple の音声認識アセットを使ってシステム音声を文字起こしします。そのため、使用する言語のモデルを事前に macOS へダウンロードしておく必要があります。`English -> Japanese` では英語、`Japanese -> English` では日本語の音声認識モデルが必要です。モデルが未インストールの場合、文字起こしの開始時に準備やダウンロードで待たされる、または環境によって文字起こしを開始できないことがあります。
+
+モデルを準備するには、`System Settings` -> `Accessibility` -> `Live Captions` を開き、Live Caption を一度有効にしてください。初回ダウンロードにはインターネット接続が必要です。Live Caption は Apple silicon 搭載 Mac のみ対応で、利用できる言語、国、地域には制限があります。精度は音声環境や言語によって変わるため、緊急用途や高リスクな判断には使用しないでください。
+
 ## アプリを入手する
 このリポジトリから実行可能なアプリバンドルを作成するには、次の手順を実行します。
 
@@ -72,7 +79,7 @@ xcodebuild test \
 - `System Audio Recording`
 - `Speech Recognition`
 
-このアプリは Live Caption と同じ音声認識基盤を使うため、使用する言語のモデルを事前に macOS へダウンロードしておく必要があります。`English -> Japanese` では英語、`Japanese -> English` では日本語の音声認識モデルが必要です。モデルが未インストールの場合、文字起こしの開始時に準備やダウンロードで待たされる、または環境によって文字起こしを開始できないことがあります。
+事前に Live Caption の言語モデルをダウンロードしてください。詳細は「macOS の Live Caption について」を参照してください。
 
 既定の Bundle Identifier は `tools/generate_project.rb` で定義されています。自分の Team や配布方法に合わせて Bundle Identifier を変更する場合は、`PRODUCT_BUNDLE_IDENTIFIER` を編集してから `bundle exec ruby tools/generate_project.rb` を再実行してください。Bundle Identifier を変更すると macOS のプライバシー許可は別アプリとして扱われるため、権限の再付与が必要です。
 
