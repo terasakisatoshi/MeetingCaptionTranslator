@@ -45,6 +45,14 @@ ruby tools/build_release.rb
 
 ビルドされたアプリは `dist/MeetingCaptionTranslator.app` に出力されます。
 
+この Mac の「アプリケーション」フォルダへビルドからインストールまで行う場合は、次を実行します。起動中のアプリはビルド成功後に強制終了されます。既存の `MeetingCaptionTranslator.app` は新しいビルドに置き換わります。
+
+```bash
+ruby tools/install_app.rb
+```
+
+`/Applications` に書き込む権限が必要です。ビルドに失敗した場合、インストール済みのアプリは変更されません。
+
 ## ビルド
 ```bash
 xcodebuild build \
@@ -78,24 +86,28 @@ xcodebuild test \
 
 ## 実行
 ビルドまたは実行する前に、Xcode で `MeetingCaptionTranslator.xcodeproj` を開き、`Signing & Capabilities` で Team と署名 ID を選択してください。ローカル開発では `Apple Development` で十分です。初回使用時には、次の権限を許可してください。
-- `System Audio Recording`
+- `System Audio Recording`（システム音声を使う場合）
+- `Microphone`（マイクを使う場合）
 - `Speech Recognition`
 
 事前に Live Caption の言語モデルをダウンロードしてください。詳細は「macOS の Live Caption について」を参照してください。
 
 既定の Bundle Identifier は `tools/generate_project.rb` で定義されています。自分の Team や配布方法に合わせて Bundle Identifier を変更する場合は、`PRODUCT_BUNDLE_IDENTIFIER` を編集してから `bundle exec ruby tools/generate_project.rb` を再実行してください。Bundle Identifier を変更すると macOS のプライバシー許可は別アプリとして扱われるため、権限の再付与が必要です。
 
-必要に応じて `Language Direction` で `English -> Japanese` または `Japanese -> English` を選択します。その後、`Start` を押すと Mac のシステム音声ソースをキャプチャし、文字起こしを開始します。言語方向は停止中に変更でき、選択内容は保存されます。
+`Audio Input` で `Mac System Audio` または `Microphone` を選択します。マイクは macOS の標準入力デバイスを使用します。入力は停止中に切り替えられ、既定値はシステム音声です。
+
+必要に応じて `Language Direction` で `English -> Japanese` または `Japanese -> English` を選択します。その後、`Start` を押すと 選択した音声をキャプチャし、文字起こしを開始します。言語方向は停止中に変更でき、選択内容は保存されます。
 
 診断目的で意図的に未署名ビルドが必要な場合は、コマンドに `CODE_SIGNING_ALLOWED=NO` を指定して上書きしてください。そのビルドを権限テストに使用しないでください。macOS TCC はアプリの署名を使ってプライバシー許可を記憶するため、未署名ビルドでは起動のたびに `Speech Recognition` の許可を再要求される可能性があります。
 
 ## プライバシー
-このアプリは、ユーザーが `Start` を押している間だけ Mac のシステム音声出力をキャプチャし、Apple の Speech framework と Translation framework を使って文字起こしと翻訳を行います。このリポジトリの実装には、開発者が運用する外部サーバー、外部 API キー、独自の認証情報は含まれていません。
+このアプリは、ユーザーが `Start` を押している間だけ 選択したシステム音声またはマイク音声をキャプチャし、Apple の Speech framework と Translation framework を使って文字起こしと翻訳を行います。このリポジトリの実装には、開発者が運用する外部サーバー、外部 API キー、独自の認証情報は含まれていません。
 
 キャプチャした音声は、このアプリではファイルに保存しません。字幕履歴はアプリ実行中のメモリ内に保持され、最大 500 行までに制限されます。永続化されるのは、言語方向などのアプリ設定のみです。Apple framework による音声認識および翻訳処理は、ユーザーの macOS 環境と Apple の各 framework の動作に従います。
 
 ## アーキテクチャ
 - `SystemPlaybackCaptureService`: Mac のシステム音声ソース用 Core Audio tap
+- `MicrophoneCaptureService`: macOS の標準マイク入力用 AVAudioEngine
 - `LiveTranscriptionService`: `SpeechAnalyzer` / `SpeechTranscriber`
 - `AppleTranslationService`: `TranslationSession`
 - `CaptionPipelineService`: 部分字幕と確定字幕の調整

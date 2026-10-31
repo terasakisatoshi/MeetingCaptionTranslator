@@ -10,7 +10,7 @@ struct ContentView: View {
                 Text("Live Caption Translator")
                     .font(.title.bold())
 
-                Text("System audio to bilingual overlay subtitles")
+                Text("Audio to bilingual overlay subtitles")
                     .foregroundStyle(.secondary)
             }
 
@@ -18,9 +18,16 @@ struct ContentView: View {
                 Text("Audio Input")
                     .font(.headline)
 
-                Text(viewModel.selectedTargetDescription)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
+                Picker("Audio Input", selection: Binding(
+                    get: { viewModel.audioInput },
+                    set: { viewModel.updateAudioInput($0) }
+                )) {
+                    ForEach(AudioInput.allCases) { input in
+                        Text(input.title).tag(input)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
             }
 
             VStack(alignment: .leading, spacing: 8) {

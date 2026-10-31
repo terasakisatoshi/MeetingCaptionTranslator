@@ -72,14 +72,34 @@ final class SelectableMessageTextTests: XCTestCase {
             statusText: "Capturing"
         )
 
-        XCTAssertEqual(
-            document.string,
-            """
-            hello world
-            こんにちは世界
-
-            how are you
-            """
-        )
+        let sourceRange = (document.string as NSString).range(of: "hello world")
+        let translatedRange = (document.string as NSString).range(of: "こんにちは世界")
+        let secondRange = (document.string as NSString).range(of: "how are you")
+        let sourceFont = document.attribute(.font, at: sourceRange.location, effectiveRange: nil) as? NSFont
+        let translationFont = document.attribute(.font, at: translatedRange.location, effectiveRange: nil) as? NSFont
+        XCTAssertEqual(sourceFont?.pointSize, 24)
+        XCTAssertEqual(translationFont?.pointSize, sourceFont?.pointSize)
+        let sourceStyle = document.attribute(.paragraphStyle, at: sourceRange.location, effectiveRange: nil) as? NSParagraphStyle
+        let translationStyle = document.attribute(.paragraphStyle, at: translatedRange.location, effectiveRange: nil) as? NSParagraphStyle
+        let secondStyle = document.attribute(.paragraphStyle, at: secondRange.location, effectiveRange: nil) as? NSParagraphStyle
+        let sourceCell = sourceStyle?.textBlocks.first as? NSTextTableBlock
+        let translationCell = translationStyle?.textBlocks.first as? NSTextTableBlock
+        let secondCell = secondStyle?.textBlocks.first as? NSTextTableBlock
+        XCTAssertEqual(sourceCell?.startingColumn, 0)
+        XCTAssertEqual(translationCell?.startingColumn, 1)
+        XCTAssertEqual(sourceCell?.startingRow, translationCell?.startingRow)
+        XCTAssertEqual(secondCell?.startingRow, 1)
+        XCTAssertEqual(sourceCell?.table.numberOfColumns, 2)
+        let storage = NSTextStorage(attributedString: document)
+        let layout = NSLayoutManager()
+        let container = NSTextContainer(containerSize: NSSize(width: 800, height: 2000))
+        container.lineFragmentPadding = 0
+        layout.addTextContainer(container)
+        storage.addLayoutManager(layout)
+        layout.ensureLayout(for: container)
+        let sourceRect = layout.boundingRect(forGlyphRange: layout.glyphRange(forCharacterRange: sourceRange, actualCharacterRange: nil), in: container)
+        let translationRect = layout.boundingRect(forGlyphRange: layout.glyphRange(forCharacterRange: translatedRange, actualCharacterRange: nil), in: container)
+        XCTAssertGreaterThan(translationRect.minX, sourceRect.minX + 300)
+        XCTAssertEqual(translationRect.minY, sourceRect.minY, accuracy: 5)
     }
 }

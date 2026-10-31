@@ -5,6 +5,22 @@ import XCTest
 
 @MainActor
 final class AppViewModelTests: XCTestCase {
+    func test_microphoneTap_acceptsAudioFromBackgroundQueue() async throws {
+        let received = expectation(description: "microphone frame received")
+        let callback = MicrophoneCaptureService.makeTapHandler { frame in
+            XCTAssertEqual(frame.buffer.frameLength, 8)
+            received.fulfill()
+        }
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1))
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 8))
+        buffer.frameLength = 8
+        let frame = CapturedAudioFrame(buffer: buffer, when: .zero)
+        DispatchQueue.global().async {
+            callback(frame.buffer, AVAudioTime(hostTime: mach_absolute_time()))
+        }
+        await fulfillment(of: [received], timeout: 2)
+    }
+
     func test_initialize_showsOverlay() async {
         let captureService = FakeCaptureService()
         let overlayWindowManager = FakeOverlayWindowManager()
@@ -33,6 +49,28 @@ final class AppViewModelTests: XCTestCase {
         await Task.yield()
 
         XCTAssertEqual(viewModel.selectedTargetDescription, "Mac System Audio")
+    }
+
+    func test_start_usesOnlySelectedMicrophoneCapture() async {
+        let system = RecordingCaptureService()
+        let microphone = RecordingCaptureService()
+        let viewModel = AppViewModel(
+            settingsStore: makeSettingsStore(),
+            captureService: system,
+            microphoneCaptureService: microphone,
+            transcriptionServiceFactory: { _ in RecordingTranscriptionService() },
+            translationServiceFactory: { _ in RecordingTranslationService() }
+        )
+        viewModel.updateAudioInput(.microphone)
+        viewModel.start()
+        await waitUntil { microphone.didEnterStartCapture }
+        XCTAssertTrue(microphone.didEnterStartCapture)
+        XCTAssertFalse(system.didEnterStartCapture)
+        viewModel.updateAudioInput(.systemAudio)
+        XCTAssertEqual(viewModel.audioInput, .microphone)
+        viewModel.stop()
+        await waitUntil { microphone.didStopCapture }
+        XCTAssertTrue(microphone.didStopCapture)
     }
 
     func test_start_surfacesSystemAudioPermissionMessage_whenCaptureStartFails() async {

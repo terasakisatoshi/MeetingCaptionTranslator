@@ -3,6 +3,7 @@ import Speech
 
 enum PermissionError: Error {
     case systemAudioRecordingDenied
+    case microphoneDenied
     case speechRecognitionDenied
 }
 

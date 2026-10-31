@@ -22,7 +22,9 @@
     <string>26.0</string>
     <key>NSAudioCaptureUsageDescription</key>
     <string>This app captures Mac playback audio to transcribe live captions.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This app uses the microphone to transcribe live captions.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>This app transcribes captured system audio into captions.</string>
+    <string>This app transcribes captured audio into captions.</string>
 </dict>
 </plist>

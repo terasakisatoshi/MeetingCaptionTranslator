@@ -99,6 +99,12 @@ private final class CaptionPipelineServiceAdapter: AppViewModelCaptionPipelineSe
     }
 }
 
+enum AudioInput: String, CaseIterable, Identifiable {
+    case systemAudio, microphone
+    var id: Self { self }
+    var title: String { self == .systemAudio ? "Mac System Audio" : "Microphone" }
+}
+
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published private(set) var appState: AppState = .idle
@@ -108,13 +114,16 @@ final class AppViewModel: ObservableObject {
         transcriptEventCount: 0,
         lastTranscriptState: nil
     )
-    @Published private(set) var selectedTargetDescription = "Mac System Audio"
+    @Published private(set) var audioInput: AudioInput = .systemAudio
+    var selectedTargetDescription: String { audioInput.title }
     @Published private(set) var languagePair: CaptionLanguagePair
 
     let overlayViewModel: OverlayViewModel
 
     private let settingsStore: AppSettingsStore
-    private let captureService: any CaptureServicing
+    private let systemCaptureService: any CaptureServicing
+    private let microphoneCaptureService: any CaptureServicing
+    private var captureService: any CaptureServicing { audioInput == .systemAudio ? systemCaptureService : microphoneCaptureService }
     private let transcriptionServiceFactory: @MainActor (Locale) -> any AppViewModelTranscriptionServicing
     private let translationServiceFactory: @MainActor (CaptionLanguagePair) -> any AppViewModelTranslationServicing
     private let captionPipelineServiceFactory: @MainActor (Int, @escaping (String) async throws -> String) -> any AppViewModelCaptionPipelineServicing
@@ -133,6 +142,7 @@ final class AppViewModel: ObservableObject {
     init(
         settingsStore: AppSettingsStore = AppSettingsStore(),
         captureService: any CaptureServicing = SystemPlaybackCaptureService(),
+        microphoneCaptureService: any CaptureServicing = MicrophoneCaptureService(),
         transcriptionServiceFactory: @escaping @MainActor (Locale) -> any AppViewModelTranscriptionServicing = { (locale: Locale) -> any AppViewModelTranscriptionServicing in
             LiveTranscriptionServiceAdapter(locale: locale)
         },
@@ -147,7 +157,8 @@ final class AppViewModel: ObservableObject {
         }
     ) {
         self.settingsStore = settingsStore
-        self.captureService = captureService
+        self.systemCaptureService = captureService
+        self.microphoneCaptureService = microphoneCaptureService
         self.transcriptionServiceFactory = transcriptionServiceFactory
         self.translationServiceFactory = translationServiceFactory
         self.captionPipelineServiceFactory = captionPipelineServiceFactory
@@ -168,8 +179,10 @@ final class AppViewModel: ObservableObject {
     }
 
     func start() {
+        guard !appState.isRunning, appState != .preparing else { return }
         lifecycleToken &+= 1
         let token = lifecycleToken
+        appState = .preparing
         Task {
             await startCapture(token: token)
         }
@@ -177,6 +190,7 @@ final class AppViewModel: ObservableObject {
 
     func stop() {
         lifecycleToken &+= 1
+        let captureService = captureService
         let transcriptionService = transcriptionService
         let captionPipelineService = captionPipelineService
         let frameRelay = frameRelay
@@ -190,6 +204,7 @@ final class AppViewModel: ObservableObject {
 
         Task {
             await stopCapture(
+            captureService: captureService,
                 frameRelay: frameRelay,
                 transcriptionService: transcriptionService,
                 captionPipelineService: captionPipelineService
@@ -237,6 +252,11 @@ final class AppViewModel: ObservableObject {
         try? settingsStore.save(settings)
     }
 
+    func updateAudioInput(_ input: AudioInput) {
+        guard !appState.isRunning, appState != .preparing else { return }
+        audioInput = input
+    }
+
     func updateLanguagePair(_ languagePair: CaptionLanguagePair) {
         guard !appState.isRunning, appState != .preparing else {
             return
@@ -272,6 +292,7 @@ final class AppViewModel: ObservableObject {
         appState = .preparing
         overlayViewModel.render(lines: [], appState: appState)
 
+        let captureService = captureService
         let transcriptionService = transcriptionServiceFactory(
             Locale(identifier: settings.languagePair.speechLocaleIdentifier)
         )
@@ -283,6 +304,7 @@ final class AppViewModel: ObservableObject {
             try await translationService.prepare()
             guard isCurrent(token: token) else {
                 await stopCapture(
+                    captureService: captureService,
                     frameRelay: frameRelay,
                     transcriptionService: transcriptionService,
                     captionPipelineService: captionPipelineService
@@ -305,6 +327,7 @@ final class AppViewModel: ObservableObject {
 
             guard isCurrent(token: token) else {
                 await stopCapture(
+                    captureService: captureService,
                     frameRelay: frameRelay,
                     transcriptionService: transcriptionService,
                     captionPipelineService: captionPipelineService
@@ -343,12 +366,13 @@ final class AppViewModel: ObservableObject {
                     }
 
                     self.errorMessage = message
-                    self.appState = .error(.systemAudioCaptureUnavailable)
+                    self.appState = .error(self.audioInput == .microphone ? .microphoneCaptureUnavailable : .systemAudioCaptureUnavailable)
                 }
             )
 
             guard isCurrent(token: token) else {
                 await stopCapture(
+                    captureService: captureService,
                     frameRelay: frameRelay,
                     transcriptionService: transcriptionService,
                     captionPipelineService: captionPipelineService
@@ -361,6 +385,7 @@ final class AppViewModel: ObservableObject {
         } catch PermissionError.systemAudioRecordingDenied {
             self.frameRelay = nil
             await stopCapture(
+            captureService: captureService,
                 frameRelay: frameRelay,
                 transcriptionService: transcriptionService,
                 captionPipelineService: captionPipelineService
@@ -372,9 +397,21 @@ final class AppViewModel: ObservableObject {
 
             appState = .error(.systemAudioCaptureUnavailable)
             errorMessage = "System Audio Recording permission is required"
+        } catch PermissionError.microphoneDenied {
+            self.frameRelay = nil
+            await stopCapture(
+                captureService: captureService,
+                frameRelay: frameRelay,
+                transcriptionService: transcriptionService,
+                captionPipelineService: captionPipelineService
+            )
+            guard isCurrent(token: token) else { return }
+            appState = .error(.microphoneCaptureUnavailable)
+            errorMessage = "Microphone permission is required"
         } catch LiveTranscriptionError.speechNotAuthorized {
             self.frameRelay = nil
             await stopCapture(
+            captureService: captureService,
                 frameRelay: frameRelay,
                 transcriptionService: transcriptionService,
                 captionPipelineService: captionPipelineService
@@ -389,6 +426,7 @@ final class AppViewModel: ObservableObject {
         } catch {
             self.frameRelay = nil
             await stopCapture(
+            captureService: captureService,
                 frameRelay: frameRelay,
                 transcriptionService: transcriptionService,
                 captionPipelineService: captionPipelineService
@@ -398,7 +436,9 @@ final class AppViewModel: ObservableObject {
                 return
             }
 
-            if error is CoreAudioTapError {
+            if error is MicrophoneCaptureError {
+                appState = .error(.microphoneCaptureUnavailable)
+            } else if error is CoreAudioTapError {
                 appState = .error(.systemAudioCaptureUnavailable)
             } else if error is LiveTranscriptionError || error is SpeechTranscriberPreparationError {
                 appState = .error(.transcriptionUnavailable)
@@ -410,6 +450,7 @@ final class AppViewModel: ObservableObject {
     }
 
     private func stopCapture(
+        captureService: any CaptureServicing,
         frameRelay: CapturedFrameRelay?,
         transcriptionService: (any AppViewModelTranscriptionServicing)?,
         captionPipelineService: (any AppViewModelCaptionPipelineServicing)?
@@ -440,6 +481,7 @@ final class AppViewModel: ObservableObject {
             return
         }
 
+        let captureService = captureService
         let frameRelay = self.frameRelay
         let transcriptionService = self.transcriptionService
         let captionPipelineService = self.captionPipelineService
@@ -449,6 +491,7 @@ final class AppViewModel: ObservableObject {
         self.captionPipelineService = nil
 
         await stopCapture(
+            captureService: captureService,
             frameRelay: frameRelay,
             transcriptionService: transcriptionService,
             captionPipelineService: captionPipelineService

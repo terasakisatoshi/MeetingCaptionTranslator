@@ -93,32 +93,29 @@ struct OverlayTranscriptDocument {
             return document
         }
 
+        let table = NSTextTable()
+        table.numberOfColumns = 2
+        table.layoutAlgorithm = .fixedLayoutAlgorithm
+
         for (index, row) in rows.enumerated() {
-            if index > 0 {
-                document.append(NSAttributedString(string: "\n\n"))
-            }
-
-            document.append(
-                NSAttributedString(
-                    string: row.sourceText,
-                    attributes: [
-                        .font: NSFont.systemFont(ofSize: fontSize, weight: .semibold),
-                        .foregroundColor: NSColor.white.withAlphaComponent(row.state == .partial ? 0.74 : 1)
-                    ]
-                )
-            )
-
-            if let translatedText = row.translatedText, !translatedText.isEmpty {
-                document.append(NSAttributedString(string: "\n"))
-                document.append(
-                    NSAttributedString(
-                        string: translatedText,
-                        attributes: [
-                            .font: NSFont.systemFont(ofSize: max(14, fontSize - 4), weight: .regular),
-                            .foregroundColor: NSColor.white.withAlphaComponent(0.92)
-                        ]
-                    )
-                )
+            let cells: [(String, NSFont, NSColor)] = [
+                (row.sourceText, .systemFont(ofSize: fontSize, weight: .semibold),
+                 .white.withAlphaComponent(row.state == .partial ? 0.74 : 1)),
+                (row.translatedText ?? "", .systemFont(ofSize: fontSize),
+                 .white.withAlphaComponent(0.92))
+            ]
+            for (column, cell) in cells.enumerated() {
+                let block = NSTextTableBlock(table: table, startingRow: index, rowSpan: 1, startingColumn: column, columnSpan: 1)
+                block.setValue(50, type: .percentageValueType, for: .width)
+                block.setWidth(10, type: .absoluteValueType, for: .padding, edge: column == 0 ? .maxX : .minX)
+                block.setWidth(12, type: .absoluteValueType, for: .padding, edge: .maxY)
+                let paragraph = NSMutableParagraphStyle()
+                paragraph.textBlocks = [block]
+                document.append(NSAttributedString(string: cell.0 + "\n", attributes: [
+                    .font: cell.1,
+                    .foregroundColor: cell.2,
+                    .paragraphStyle: paragraph
+                ]))
             }
         }
 
