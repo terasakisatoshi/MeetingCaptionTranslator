@@ -21,6 +21,19 @@ final class AppViewModelTests: XCTestCase {
         await fulfillment(of: [received], timeout: 2)
     }
 
+    func test_microphoneSelection_updatesCaptureDeviceAndCanReturnToDefault() {
+        let microphone = MicrophoneCaptureService()
+        let viewModel = AppViewModel(settingsStore: makeSettingsStore(), microphoneCaptureService: microphone)
+
+        viewModel.updateMicrophoneDevice("usb-device")
+        XCTAssertEqual(viewModel.selectedMicrophoneID, "usb-device")
+        XCTAssertEqual(microphone.selectedDeviceID, "usb-device")
+
+        viewModel.updateMicrophoneDevice("")
+        XCTAssertEqual(viewModel.selectedMicrophoneID, "")
+        XCTAssertNil(microphone.selectedDeviceID)
+    }
+
     func test_initialize_showsOverlay() async {
         let captureService = FakeCaptureService()
         let overlayWindowManager = FakeOverlayWindowManager()

@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import SwiftUI
 
 struct ContentView: View {
@@ -28,6 +29,23 @@ struct ContentView: View {
                 }
                 .pickerStyle(.segmented)
                 .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
+
+                if viewModel.audioInput == .microphone {
+                    Picker("Microphone", selection: Binding(
+                        get: { viewModel.selectedMicrophoneID },
+                        set: { viewModel.updateMicrophoneDevice($0) }
+                    )) {
+                        Text("System Default").tag("")
+                        ForEach(viewModel.microphoneDevices) { device in
+                            Text(device.name).tag(device.id)
+                        }
+                        if !viewModel.selectedMicrophoneID.isEmpty &&
+                            !viewModel.microphoneDevices.contains(where: { $0.id == viewModel.selectedMicrophoneID }) {
+                            Text("Selected microphone unavailable").tag(viewModel.selectedMicrophoneID)
+                        }
+                    }
+                    .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
+                }
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -122,6 +140,12 @@ struct ContentView: View {
         }
         .padding(24)
         .frame(minWidth: 460, minHeight: 460)
+        .onReceive(NotificationCenter.default.publisher(for: AVCaptureDevice.wasConnectedNotification)) { _ in
+            viewModel.refreshMicrophoneDevices()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVCaptureDevice.wasDisconnectedNotification)) { _ in
+            viewModel.refreshMicrophoneDevices()
+        }
         .task {
             viewModel.initialize()
         }

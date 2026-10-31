@@ -1,3 +1,4 @@
+import AVFoundation
 import Combine
 import Foundation
 
@@ -105,6 +106,11 @@ enum AudioInput: String, CaseIterable, Identifiable {
     var title: String { self == .systemAudio ? "Mac System Audio" : "Microphone" }
 }
 
+struct MicrophoneDevice: Identifiable, Equatable {
+    let id: String
+    let name: String
+}
+
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published private(set) var appState: AppState = .idle
@@ -115,6 +121,8 @@ final class AppViewModel: ObservableObject {
         lastTranscriptState: nil
     )
     @Published private(set) var audioInput: AudioInput = .systemAudio
+    @Published private(set) var microphoneDevices: [MicrophoneDevice] = []
+    @Published private(set) var selectedMicrophoneID: String = ""
     var selectedTargetDescription: String { audioInput.title }
     @Published private(set) var languagePair: CaptionLanguagePair
 
@@ -169,7 +177,20 @@ final class AppViewModel: ObservableObject {
         overlayViewModel = OverlayViewModel(settings: settings)
     }
 
+    func refreshMicrophoneDevices() {
+        microphoneDevices = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.microphone, .external], mediaType: .audio, position: .unspecified
+        ).devices.map { MicrophoneDevice(id: $0.uniqueID, name: $0.localizedName) }
+    }
+
+    func updateMicrophoneDevice(_ id: String) {
+        guard !appState.isRunning, appState != .preparing else { return }
+        selectedMicrophoneID = id
+        (microphoneCaptureService as? MicrophoneCaptureService)?.selectedDeviceID = id.isEmpty ? nil : id
+    }
+
     func initialize() {
+        refreshMicrophoneDevices()
         if overlayWindowManager == nil {
             overlayWindowManager = overlayWindowManagerFactory(overlayViewModel) { [weak self] size in
                 self?.handleOverlayWindowResized(to: size)
