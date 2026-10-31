@@ -1,5 +1,11 @@
 import Foundation
 
+enum TranscriptionEngine: String, Codable, CaseIterable, Identifiable, Sendable {
+    case apple, haas
+    var id: Self { self }
+    var title: String { self == .apple ? "Apple Speech" : "Haas-ja (speech.cpp)" }
+}
+
 struct AppSettings: Codable, Equatable, Sendable {
     var overlayOpacity: Double
     var fontSize: Double
@@ -7,6 +13,7 @@ struct AppSettings: Codable, Equatable, Sendable {
     var overlayWidth: Double
     var overlayHeight: Double
     var languagePair: CaptionLanguagePair
+    var transcriptionEngine: TranscriptionEngine = .apple
 
     static let overlayOpacityRange: ClosedRange<Double> = 0.2...0.9
     static let overlayWidthRange: ClosedRange<Double> = 640...1600
@@ -59,6 +66,7 @@ struct AppSettings: Codable, Equatable, Sendable {
             overlayHeight: try container.decodeIfPresent(Double.self, forKey: .overlayHeight) ?? Self.defaultValue.overlayHeight,
             languagePair: try container.decodeIfPresent(CaptionLanguagePair.self, forKey: .languagePair) ?? Self.defaultValue.languagePair
         )
+        transcriptionEngine = try container.decodeIfPresent(TranscriptionEngine.self, forKey: .transcriptionEngine) ?? .apple
     }
 
     func encode(to encoder: any Encoder) throws {
@@ -69,6 +77,7 @@ struct AppSettings: Codable, Equatable, Sendable {
         try container.encode(overlayWidth, forKey: .overlayWidth)
         try container.encode(overlayHeight, forKey: .overlayHeight)
         try container.encode(languagePair, forKey: .languagePair)
+        try container.encode(transcriptionEngine, forKey: .transcriptionEngine)
     }
 
     static func clamp(_ value: Double, to range: ClosedRange<Double>) -> Double {
@@ -90,5 +99,6 @@ struct AppSettings: Codable, Equatable, Sendable {
         case overlayWidth
         case overlayHeight
         case languagePair
+        case transcriptionEngine
     }
 }

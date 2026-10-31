@@ -1,0 +1,3 @@
+# Haas-ja transcription
+
+Japanese-to-English captions can use a bundled speech.cpp worker built from pinned source, or a locally installed worker with Haas-ja-v1.0, while Apple Speech remains the default and handles English. Audio is converted to 16 kHz mono and segmented by energy and pauses, with a maximum segment length to bound latency and memory. The worker downloads its model on first use. This introduces no new macOS permission; capture permissions remain necessary. The bundled worker is built for the build machine architecture; separate native builds are needed for Intel and Apple silicon. Energy-based segmentation can miss quiet speech and must be evaluated against real meeting audio.

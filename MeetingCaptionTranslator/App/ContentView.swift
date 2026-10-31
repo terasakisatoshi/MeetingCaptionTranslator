@@ -67,6 +67,22 @@ struct ContentView: View {
                 .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
             }
 
+            if viewModel.languagePair.sourceLanguage == "ja" {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Japanese Speech Recognition").font(.headline)
+                    Picker("Japanese Speech Recognition", selection: Binding(
+                        get: { viewModel.transcriptionEngine },
+                        set: { viewModel.updateTranscriptionEngine($0) }
+                    )) {
+                        ForEach(TranscriptionEngine.allCases) { engine in
+                            Text(engine.title).tag(engine)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
+                }
+            }
+
             VStack(alignment: .leading, spacing: 12) {
                 Text("Overlay")
                     .font(.headline)

@@ -62,13 +62,22 @@ module InstallApp
     raise InstallError, "Installation failed: #{e.message}"
   end
 
-  def self.main
-    status = BuildRelease.run
+  def self.main(root: ROOT, destination: DESTINATION, runner: ->(*args) { system(*args) },
+                builder: -> { BuildRelease.run }, stopper: -> { stop_running },
+                installer: ->(**args) { install(**args) })
+    puts "Preparing speech.cpp..."
+    raise InstallError, "speech.cpp build failed" unless runner.call(File.join(root, "tools", "build_speech.sh"))
+
+    puts "Preparing Haas-ja model..."
+    speech = File.join(root, "build", "speech-native", "speech")
+    raise InstallError, "Haas-ja model download failed" unless runner.call(speech, "pull", "haas-ja-v1.0")
+
+    status = builder.call
     return status unless status.zero?
 
-    stop_running
-    install(source: File.join(ROOT, "dist", APP_NAME), destination: DESTINATION)
-    puts "Installed #{DESTINATION}"
+    stopper.call
+    installer.call(source: File.join(root, "dist", APP_NAME), destination: destination)
+    puts "Installed #{destination}"
     0
   rescue InstallError, BuildRelease::BuildError => e
     warn e.message

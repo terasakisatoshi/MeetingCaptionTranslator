@@ -6,6 +6,29 @@ require "minitest/autorun"
 require_relative "install_app"
 
 class InstallAppTest < Minitest::Test
+  def test_prepares_speech_and_model_before_build_and_install
+    calls = []
+    runner = ->(*args) { calls << args; true }
+    status = InstallApp.main(
+      root: "/repo", runner: runner,
+      builder: -> { calls << [:build]; 0 },
+      stopper: -> { calls << [:stop] },
+      installer: ->(**) { calls << [:install] }
+    )
+    assert_equal 0, status
+    assert_equal ["/repo/tools/build_speech.sh"], calls[0]
+    assert_equal ["/repo/build/speech-native/speech", "pull", "haas-ja-v1.0"], calls[1]
+    assert_equal [[:build], [:stop], [:install]], calls.drop(2)
+  end
+
+  def test_failed_model_download_does_not_build_or_replace_app
+    calls = []
+    runner = ->(*args) { calls << args; calls.size == 1 }
+    status = InstallApp.main(root: "/repo", runner: runner, builder: -> { flunk "build must not run" })
+    assert_equal 1, status
+    assert_equal 2, calls.size
+  end
+
   def test_running_application_is_force_stopped_before_install
     processes = Class.new do
       attr_reader :signals

@@ -124,6 +124,7 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var microphoneDevices: [MicrophoneDevice] = []
     @Published private(set) var selectedMicrophoneID: String = ""
     var selectedTargetDescription: String { audioInput.title }
+    @Published private(set) var transcriptionEngine: TranscriptionEngine
     @Published private(set) var languagePair: CaptionLanguagePair
 
     let overlayViewModel: OverlayViewModel
@@ -174,6 +175,7 @@ final class AppViewModel: ObservableObject {
         let loadedSettings = settingsStore.load()
         settings = loadedSettings
         languagePair = loadedSettings.languagePair
+        transcriptionEngine = loadedSettings.transcriptionEngine
         overlayViewModel = OverlayViewModel(settings: settings)
     }
 
@@ -278,6 +280,13 @@ final class AppViewModel: ObservableObject {
         audioInput = input
     }
 
+    func updateTranscriptionEngine(_ engine: TranscriptionEngine) {
+        guard !appState.isRunning, appState != .preparing else { return }
+        transcriptionEngine = engine
+        settings.transcriptionEngine = engine
+        try? settingsStore.save(settings)
+    }
+
     func updateLanguagePair(_ languagePair: CaptionLanguagePair) {
         guard !appState.isRunning, appState != .preparing else {
             return
@@ -314,9 +323,12 @@ final class AppViewModel: ObservableObject {
         overlayViewModel.render(lines: [], appState: appState)
 
         let captureService = captureService
-        let transcriptionService = transcriptionServiceFactory(
-            Locale(identifier: settings.languagePair.speechLocaleIdentifier)
-        )
+        let transcriptionService: any AppViewModelTranscriptionServicing
+        if transcriptionEngine == .haas && languagePair.sourceLanguage == "ja" {
+            transcriptionService = HaasTranscriptionService()
+        } else {
+            transcriptionService = transcriptionServiceFactory(Locale(identifier: settings.languagePair.speechLocaleIdentifier))
+        }
         let translationService = translationServiceFactory(settings.languagePair)
         var captionPipelineService: (any AppViewModelCaptionPipelineServicing)?
         var frameRelay: CapturedFrameRelay?
@@ -333,6 +345,7 @@ final class AppViewModel: ObservableObject {
                 return
             }
 
+            self.transcriptionService = transcriptionService
             try await transcriptionService.start(
                 eventHandler: { [weak self] event in
                     guard let self else {
@@ -461,7 +474,7 @@ final class AppViewModel: ObservableObject {
                 appState = .error(.microphoneCaptureUnavailable)
             } else if error is CoreAudioTapError {
                 appState = .error(.systemAudioCaptureUnavailable)
-            } else if error is LiveTranscriptionError || error is SpeechTranscriberPreparationError {
+            } else if error is LiveTranscriptionError || error is SpeechTranscriberPreparationError || error is HaasTranscriptionError {
                 appState = .error(.transcriptionUnavailable)
             } else {
                 appState = .error(.translationUnavailable)

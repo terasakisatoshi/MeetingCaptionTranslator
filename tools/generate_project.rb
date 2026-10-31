@@ -180,6 +180,26 @@ Dir.glob(File.join(APP_DIR, "**/*"), File::FNM_DOTMATCH)
   app_target.add_file_references([file_ref]) unless relative_path.end_with?(".plist", ".entitlements")
 end
 
+speech_phase = app_target.new_shell_script_build_phase("Embed speech.cpp")
+speech_phase.shell_script = <<~SHELL
+  set -eu
+  source_path="${SRCROOT}/build/speech-native/speech"
+  destination="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/speech"
+  if [ -x "$source_path" ]; then
+    mkdir -p "$(dirname "$destination")"
+    cp "$source_path" "$destination"
+    cp "${SRCROOT}/build/speech.cpp/LICENSE" "${destination}.LICENSE"
+    cp "${SRCROOT}/build/speech.cpp/ggml/LICENSE" "${destination}.ggml-LICENSE"
+    if [ "${CODE_SIGNING_ALLOWED:-NO}" = YES ] && [ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" ]; then
+      /usr/bin/codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" --options runtime "$destination"
+    fi
+  else
+    rm -f "$destination" "${destination}.LICENSE" "${destination}.ggml-LICENSE"
+    echo "warning: speech.cpp is not bundled; run tools/build_speech.sh first"
+  fi
+SHELL
+speech_phase.always_out_of_date = "1"
+
 asset_ref = app_group.new_file(ASSET_CATALOG)
 app_target.resources_build_phase.add_file_reference(asset_ref)
 
