@@ -72,6 +72,9 @@ module InstallApp
     speech = File.join(root, "build", "speech-native", "speech")
     raise InstallError, "Haas-ja model download failed" unless runner.call(speech, "pull", "haas-ja-v1.0")
 
+    puts "Preparing Qwen3-ASR model..."
+    raise InstallError, "Qwen3-ASR model download failed" unless runner.call(speech, "pull", "qwen3-asr-0.6b")
+
     status = builder.call
     return status unless status.zero?
 

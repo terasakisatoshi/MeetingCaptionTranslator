@@ -18,7 +18,8 @@ class InstallAppTest < Minitest::Test
     assert_equal 0, status
     assert_equal ["/repo/tools/build_speech.sh"], calls[0]
     assert_equal ["/repo/build/speech-native/speech", "pull", "haas-ja-v1.0"], calls[1]
-    assert_equal [[:build], [:stop], [:install]], calls.drop(2)
+    assert_equal ["/repo/build/speech-native/speech", "pull", "qwen3-asr-0.6b"], calls[2]
+    assert_equal [[:build], [:stop], [:install]], calls.drop(3)
   end
 
   def test_failed_model_download_does_not_build_or_replace_app

@@ -67,20 +67,19 @@ struct ContentView: View {
                 .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
             }
 
-            if viewModel.languagePair.sourceLanguage == "ja" {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Japanese Speech Recognition").font(.headline)
-                    Picker("Japanese Speech Recognition", selection: Binding(
-                        get: { viewModel.transcriptionEngine },
-                        set: { viewModel.updateTranscriptionEngine($0) }
-                    )) {
-                        ForEach(TranscriptionEngine.allCases) { engine in
-                            Text(engine.title).tag(engine)
-                        }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Speech Recognition").font(.headline)
+                Picker("Speech Recognition", selection: Binding(
+                    get: { viewModel.transcriptionEngine },
+                    set: { viewModel.updateTranscriptionEngine($0) }
+                )) {
+                    ForEach(TranscriptionEngine.allCases) { engine in
+                        Text(engine == .apple ? "Apple Speech" : (viewModel.languagePair.sourceLanguage == "ja" ? "Haas-ja (speech.cpp)" : "Qwen3-ASR (speech.cpp)"))
+                            .tag(engine)
                     }
-                    .pickerStyle(.segmented)
-                    .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
                 }
+                .pickerStyle(.segmented)
+                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
             }
 
             VStack(alignment: .leading, spacing: 12) {

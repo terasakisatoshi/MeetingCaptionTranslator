@@ -324,8 +324,10 @@ final class AppViewModel: ObservableObject {
 
         let captureService = captureService
         let transcriptionService: any AppViewModelTranscriptionServicing
-        if transcriptionEngine == .haas && languagePair.sourceLanguage == "ja" {
-            transcriptionService = HaasTranscriptionService()
+        if transcriptionEngine == .haas {
+            transcriptionService = languagePair.sourceLanguage == "ja"
+                ? HaasTranscriptionService()
+                : HaasTranscriptionService(model: "qwen3-asr-0.6b", language: "en")
         } else {
             transcriptionService = transcriptionServiceFactory(Locale(identifier: settings.languagePair.speechLocaleIdentifier))
         }

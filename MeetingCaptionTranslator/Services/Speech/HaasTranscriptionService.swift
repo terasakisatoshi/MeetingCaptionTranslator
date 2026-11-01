@@ -49,6 +49,14 @@ enum HaasTranscriptionError: LocalizedError {
 }
 
 actor HaasTranscriptionService: AppViewModelTranscriptionServicing {
+    private let model: String
+    private let language: String?
+
+    init(model: String = "haas-ja-v1.0", language: String? = nil) {
+        self.model = model
+        self.language = language
+    }
+
     private let converter = AudioBufferConverter()
     private let format = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000, channels: 1, interleaved: false)!
     private var segmenter = HaasSegmenter(sampleRate: 16000)
@@ -81,7 +89,7 @@ actor HaasTranscriptionService: AppViewModelTranscriptionServicing {
         let stdin = Pipe()
         let stdout = Pipe()
         process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = ["worker", "haas-ja-v1.0"]
+        process.arguments = ["worker", model] + (language.map { ["--language", $0] } ?? [])
         process.standardInput = stdin
         process.standardOutput = stdout
         process.standardError = FileHandle.nullDevice

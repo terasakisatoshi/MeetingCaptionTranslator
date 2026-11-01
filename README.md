@@ -2,7 +2,7 @@
 
 ![](./demo.png)
 
-システム音声またはマイク音声をキャプチャし、Apple Speech または speech.cpp の Haas-ja で文字起こしして、英語から日本語または日本語から英語へ翻訳し、常に最前面に表示されるオーバーレイへ描画する macOS アプリです。
+システム音声またはマイク音声をキャプチャし、Apple Speech または speech.cpp の Qwen3-ASR / Haas-ja で文字起こしして、英語から日本語または日本語から英語へ翻訳し、常に最前面に表示されるオーバーレイへ描画する macOS アプリです。
 
 ## 必要要件
 - macOS 26.0+
@@ -37,7 +37,7 @@ Xcode、Ruby、Git、CMake 3.20 以降、C++17 コンパイラを用意し、リ
 ruby tools/install_app.rb
 ```
 
-このコマンドは、speech.cpp の取得・ビルド、Haas-ja モデル（約 0.66 GB）のダウンロード、アプリのビルドを行い、`/Applications/MeetingCaptionTranslator.app` にインストールします。初回はインターネット接続と十分な空き容量が必要です。`/Applications` への書き込み権限や Xcode の署名設定も環境に応じて必要です。
+このコマンドは、speech.cpp の取得・ビルド、Haas-ja（約 0.66 GB）と Qwen3-ASR 0.6B（約 0.84 GB）モデルのダウンロード、アプリのビルドを行い、`/Applications/MeetingCaptionTranslator.app` にインストールします。初回はインターネット接続と十分な空き容量が必要です。`/Applications` への書き込み権限や Xcode の署名設定も環境に応じて必要です。
 
 ビルドが成功すると、起動中の MeetingCaptionTranslator は強制終了され、インストール済みのアプリは新しいビルドに置き換わります。準備またはビルドに失敗した場合、インストール済みのアプリは変更されません。
 
@@ -91,7 +91,7 @@ Apple Speech を使う場合は、事前に Live Caption の言語モデルを�
 
 `Audio Input` で `Mac System Audio` または `Microphone` を選択します。マイクは macOS の標準入力デバイスを使用します。入力は停止中に切り替えられ、既定値はシステム音声です。
 
-`Language Direction` で `English -> Japanese` または `Japanese -> English` を選択します。日本語 → 英語では `Japanese Speech Recognition` で `Apple Speech` または `Haas-ja (speech.cpp)` を選べます。言語方向と認識エンジンは停止中に変更でき、選択内容は保存されます。`Start` を押すと音声のキャプチャと文字起こしが始まります。
+`Language Direction` で `English -> Japanese` または `Japanese -> English` を選択します。`Speech Recognition` で `Apple Speech` または speech.cpp を選べます。speech.cpp では英語入力に Qwen3-ASR 0.6B、日本語入力に Haas-ja を使用します。言語方向と認識エンジンは停止中に変更でき、選択内容は保存されます。`Start` を押すと音声のキャプチャと文字起こしが始まります。
 
 診断目的で意図的に未署名ビルドが必要な場合は、コマンドに `CODE_SIGNING_ALLOWED=NO` を指定して上書きしてください。そのビルドを権限テストに使用しないでください。macOS TCC はアプリの署名を使ってプライバシー許可を記憶するため、未署名ビルドでは起動のたびに `Speech Recognition` の許可を再要求される可能性があります。
 
@@ -114,11 +114,11 @@ Apple Speech を使う場合は、事前に Live Caption の言語モデルを�
 - システム音声またはマイクを入力に選択できます。ディスプレイ選択機能はありません。
 - ソースファイルを追加または削除した後は、`bundle exec ruby tools/generate_project.rb` を再実行してください。
 
-## Haas-ja による日本語音声認識
+## speech.cpp による音声認識
 
-日本語 → 英語では、Japanese Speech Recognition で Apple Speech と Haas-ja を切り替えられます。`ruby tools/install_app.rb` は speech.cpp を準備し、モデルをダウンロードしてからアプリをインストールします。手動で Xcode ビルドする場合、speech.cpp を同梱するには `tools/build_speech.sh` を先に実行してください。SpeechCxx.jl と同じくソースおよび固定された ggml を CMake でビルドします（speech.cpp 0.9.4）。生成物は次のアプリビルド時に同梱されます。ビルドは実行した Mac の CPU 向けです。別アーキテクチャの Mac 向けにはその環境でビルドしてください。同梱されない場合、アプリは `~/.local/bin/speech`、`/opt/homebrew/bin/speech`、`/usr/local/bin/speech` の順に外部インストールを探します（0.9.3 以降）。
+英語入力では Qwen3-ASR 0.6B、日本語入力では Haas-ja と Apple Speech を切り替えられます。`ruby tools/install_app.rb` は speech.cpp を準備し、モデルをダウンロードしてからアプリをインストールします。手動で Xcode ビルドする場合、speech.cpp を同梱するには `tools/build_speech.sh` を先に実行してください。SpeechCxx.jl と同じくソースおよび固定された ggml を CMake でビルドします（speech.cpp 0.9.4）。生成物は次のアプリビルド時に同梱されます。ビルドは実行した Mac の CPU 向けです。別アーキテクチャの Mac 向けにはその環境でビルドしてください。同梱されない場合、アプリは `~/.local/bin/speech`、`/opt/homebrew/bin/speech`、`/usr/local/bin/speech` の順に外部インストールを探します（0.9.3 以降）。
 
-インストール時にモデルを取得しなかった場合は、初回使用時にモデル（約 0.66 GB）のダウンロードと読み込みが必要です。認識はローカルで実行されますが、初回ダウンロードにはインターネット接続が必要です。字幕は発話の切れ目で確定するため、Apple Speech より表示が遅れることがあります。音量による簡易的な発話検出を使用するため、静かな声や騒音環境では認識が途切れることがあります。英語 → 日本語では Apple Speech を使用します。
+インストール時にモデルを取得しなかった場合は、初回使用時にモデル（Haas-ja 約 0.66 GB、Qwen3-ASR 約 0.84 GB）のダウンロードと読み込みが必要です。認識はローカルで実行されますが、初回ダウンロードにはインターネット接続が必要です。字幕は発話の切れ目で確定するため、Apple Speech より表示が遅れることがあります。音量による簡易的な発話検出を使用するため、静かな声や騒音環境では認識が途切れることがあります。Qwen3-ASR の英語認識精度は話者や音声環境によって異なります。
 
 ## ライセンス
 
