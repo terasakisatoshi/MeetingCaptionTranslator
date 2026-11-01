@@ -146,6 +146,10 @@ ruby tools/build_release.rb
 | `tools/` | プロジェクト生成、ビルド、インストールのスクリプト |
 | `docs/plans/` | 設計・実装メモ |
 
+## 謝辞
+
+音声認識には [speech.cpp](https://github.com/nyosegawa/speech.cpp) を使用しています。開発者と貢献者の皆さまに感謝します。
+
 ## ライセンス
 
 [MIT License](LICENSE)
