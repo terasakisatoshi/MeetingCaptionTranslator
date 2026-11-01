@@ -1,54 +1,109 @@
 # MeetingCaptionTranslator
 
-![](./demo.png)
+Mac のシステム音声またはマイクの音声を文字起こしし、英語と日本語の字幕を常に手前に表示する macOS アプリです。オンライン会議や動画を見ながら、元の発話と翻訳を確認できます。
 
-システム音声またはマイク音声をキャプチャし、Apple Speech または speech.cpp の Qwen3-ASR / Haas-ja で文字起こしして、英語から日本語または日本語から英語へ翻訳し、常に最前面に表示されるオーバーレイへ描画する macOS アプリです。
+![字幕オーバーレイの表示例](demo.png)
 
-## 必要要件
-- macOS 26.0+
-- macOS 26 SDK を含む Xcode 16+
-- Ruby、Git、CMake 3.20+、C++17 コンパイラ（プロジェクト再生成には Bundler も必要）
-- Apple Speech を使う場合は、対象言語の音声認識モデル
+## できること
 
-## プロジェクト構成
-- `MeetingCaptionTranslator/`: アプリのソースコード
-- `MeetingCaptionTranslatorTests/`: XCTest テストスイート
-- `tools/generate_project.rb`: `.xcodeproj` を再生成するスクリプト
-- `docs/plans/`: 設計および実装メモ
+- Mac のシステム音声、または選択したマイクから音声を取得する
+- 英語 → 日本語、日本語 → 英語の字幕を表示する
+- 音声認識に Apple Speech またはローカルの speech.cpp を選ぶ
+- 字幕オーバーレイのサイズ、文字サイズ、背景の透明度を調整する
 
-## 開発用セットアップ
+翻訳には Apple の Translation framework を使用します。認識結果や翻訳の精度、字幕が表示されるまでの時間は、話者、言語、音声環境、選んだ認識エンジンによって変わります。
+
+## 必要な環境
+
+- macOS 26 以降
+- macOS 26 SDK を含む Xcode
+- インストール用: Ruby、Git、CMake 3.20 以降、C++17 対応コンパイラ
+- モデルの初回ダウンロード用のインターネット接続と空き容量
+
+Apple Speech と Translation の利用可能な言語やモデルは macOS の環境に依存します。開発時に Xcode プロジェクトを再生成するには Bundler も必要です。
+
+## インストール
+
+リポジトリを取得し、インストールスクリプトを実行します。
+
+```bash
+git clone https://github.com/terasakisatoshi/MeetingCaptionTranslator.git
+cd MeetingCaptionTranslator
+ruby tools/install_app.rb
+```
+
+スクリプトは speech.cpp をビルドし、Haas-ja（約 0.66 GB）と Qwen3-ASR 0.6B（約 0.84 GB）をダウンロードしてから、アプリをビルドし、`/Applications/MeetingCaptionTranslator.app` にインストールします。初回は時間がかかります。環境に応じて Xcode の署名設定と `/Applications` への書き込み権限が必要です。
+
+ビルド成功後、起動中の MeetingCaptionTranslator は強制終了され、インストール済みのアプリは置き換えられます。モデルの準備またはビルドに失敗した場合は、インストール済みのアプリを変更しません。
+
+## 使い方
+
+1. MeetingCaptionTranslator を起動します。
+2. **Audio Input** で `Mac System Audio` または `Microphone` を選びます。マイクの場合は、システムの既定入力または一覧からデバイスを選べます。
+3. **Language Direction** で `English -> Japanese` または `Japanese -> English` を選びます。
+4. **Speech Recognition** で Apple Speech または speech.cpp のモデルを選びます。Apple Speech のモデルは `Download Apple Speech Model` で事前に準備できます。
+5. **Start** を押し、必要な権限を許可します。停止するには **Stop** を押します。
+
+字幕ウィンドウは端や角をドラッグしてサイズを変更できます。コントロールウィンドウの **Opacity** と **Font Size** で見た目を調整できます。言語方向と音声認識エンジンは停止中に変更でき、選択は保存されます。既定の入力はシステム音声、既定の言語方向は英語 → 日本語、既定の音声認識エンジンは Apple Speech です。
+
+### macOS の権限
+
+初回使用時には、選択した機能に応じて次の権限を許可してください。
+
+| 権限 | 必要な場合 |
+| --- | --- |
+| System Audio Recording | Mac のシステム音声を取得するとき |
+| Microphone | マイクを使用するとき |
+| Speech Recognition | Apple Speech を使用するとき |
+
+権限を拒否した場合は、macOS の「システム設定」→「プライバシーとセキュリティ」で該当する権限を確認してください。
+
+## 音声認識モデル
+
+| 入力言語 | Apple Speech | speech.cpp |
+| --- | --- | --- |
+| 英語 → 日本語 | 英語モデル | Qwen3-ASR 0.6B |
+| 日本語 → 英語 | 日本語モデル | Haas-ja |
+
+### Apple Speech
+
+`Download Apple Speech Model` は、選択中の入力言語のモデルを確認し、必要なら macOS 経由でダウンロード・インストールします。準備中はスピナーが表示され、完了後に `Apple Speech model is ready.` と表示されます。すでにモデルがある場合もこのボタンで確認できます。
+
+事前準備を行わずに `Start` を押した場合も、必要なモデルの準備を試みます。初回の取得にはインターネット接続が必要です。モデルは macOS が管理するため、利用できる言語や取得結果は環境によって異なります。
+
+### speech.cpp
+
+インストールスクリプトは両方のモデルを事前に取得します。手動ビルドなどでモデルがない場合は、初回使用時にダウンロードと読み込みが必要です。認識はローカルで実行されます。
+
+speech.cpp の字幕は発話の切れ目で確定します。音量による簡易的な発話検出を使用するため、静かな声や騒音環境では音声が途切れたり、字幕の表示が遅れたりすることがあります。
+
+## 困ったときは
+
+- **字幕が出ない:** `Audio Input`、入力デバイス、システム音声またはマイクの権限を確認してください。画面の **Status** と **Diagnostics**、エラーメッセージも確認できます。
+- **Apple Speech の準備が終わらない、または失敗する:** インターネット接続と入力言語を確認し、`Download Apple Speech Model` を再試行してください。モデルの利用可否は macOS 環境に依存します。
+- **speech.cpp が見つからない:** インストールスクリプトを実行するか、開発時は `tools/build_speech.sh` を実行してからアプリを再ビルドしてください。
+- **翻訳を開始できない:** macOS の翻訳言語データと画面に表示されたエラーを確認してください。
+- **権限を何度も求められる:** 実行用のアプリに Xcode で Team と署名 ID を設定してください。未署名ビルドは権限の動作確認に適していません。
+
+## プライバシー
+
+アプリは `Start` から `Stop` までの間、選択された音声入力を取得します。アプリ自身は取得した音声をファイルに保存しません。字幕履歴は実行中のメモリ内に保持され、最大 500 行です。言語方向や表示設定などは保存されます。
+
+このリポジトリの実装には、開発者が運用する外部サーバー、外部 API キー、独自の認証情報は含まれていません。Apple の各 framework による処理は、macOS 環境と framework の動作に従います。モデルのダウンロードにはネットワークを使用します。
+
+## 開発
+
+### セットアップ
+
 ```bash
 bundle install
 bundle exec ruby tools/generate_project.rb
 ```
 
-## macOS の Live Caption について
-macOS の Live Caption は、Mac 上のアプリ音声や周囲の会話をリアルタイムに文字起こしするアクセシビリティ機能です。Apple の案内では、Live Caption の音声処理はデバイス上で行われ、初回有効化時には言語データが Mac にダウンロードされます。
+ソースファイルを追加または削除した後も、`tools/generate_project.rb` を再実行してください。Xcode で `MeetingCaptionTranslator.xcodeproj` を開いて実行する場合は、`Signing & Capabilities` で Team と署名 ID を設定します。Bundle Identifier を変更する場合は `tools/generate_project.rb` の `PRODUCT_BUNDLE_IDENTIFIER` を編集してプロジェクトを再生成します。変更後は macOS の権限を再付与する必要があります。
 
-Apple Speech を選択した場合、このアプリは Live Caption と同じ Apple の音声認識アセットを使ってシステム音声を文字起こしします。そのため、使用する言語のモデルを事前に macOS へダウンロードしておく必要があります。`English -> Japanese` では英語、`Japanese -> English` では日本語の音声認識モデルが必要です。モデルが未インストールの場合、文字起こしの開始時に準備やダウンロードで待たされる、または環境によって文字起こしを開始できないことがあります。
+### ビルドとテスト
 
-モデルを準備するには、`System Settings` -> `Accessibility` -> `Live Captions` を開き、Live Caption を一度有効にしてください。初回ダウンロードにはインターネット接続が必要です。Live Caption は Apple silicon 搭載 Mac のみ対応で、利用できる言語、国、地域には制限があります。精度は音声環境や言語によって変わるため、緊急用途や高リスクな判断には使用しないでください。
-
-## インストール
-
-Xcode、Ruby、Git、CMake 3.20 以降、C++17 コンパイラを用意し、リポジトリ内で次を実行します。
-
-```bash
-ruby tools/install_app.rb
-```
-
-このコマンドは、speech.cpp の取得・ビルド、Haas-ja（約 0.66 GB）と Qwen3-ASR 0.6B（約 0.84 GB）モデルのダウンロード、アプリのビルドを行い、`/Applications/MeetingCaptionTranslator.app` にインストールします。初回はインターネット接続と十分な空き容量が必要です。`/Applications` への書き込み権限や Xcode の署名設定も環境に応じて必要です。
-
-ビルドが成功すると、起動中の MeetingCaptionTranslator は強制終了され、インストール済みのアプリは新しいビルドに置き換わります。準備またはビルドに失敗した場合、インストール済みのアプリは変更されません。
-
-リポジトリをまだ取得していない場合は、先に次を実行してください。
-
-```bash
-git clone https://github.com/terasakisatoshi/MeetingCaptionTranslator.git
-cd MeetingCaptionTranslator
-```
-
-## ビルド
 ```bash
 xcodebuild build \
   -project MeetingCaptionTranslator.xcodeproj \
@@ -57,20 +112,6 @@ xcodebuild build \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-このコマンドはソースのビルド検証用に署名を無効化しています。実際にアプリを起動して権限まわりを確認する場合は、Xcode で Team と署名 ID を設定して署名済みアプリとして実行してください。
-
-## リリース成果物
-```bash
-ruby tools/build_release.rb
-```
-
-ビルド済みのアプリバンドルを `dist/MeetingCaptionTranslator.app` にコピーします。Haas-ja 用の speech.cpp を同梱するには、先に `tools/build_speech.sh` を実行してください。
-リリース先のパスは `ruby tools/build_release_test.rb` で検証できます。
-この成果物では、プロジェクトのデフォルト署名設定が使用されます。
-
-このプロジェクトは Mac のシステム音声出力を Core Audio tap でキャプチャするため、アプリ Sandbox を無効にしています。Sandbox 設定を変更する場合は、`System Audio Recording` と `Speech Recognition` の権限付与、および実際の音声キャプチャが動作することを再検証してください。
-
-## テスト
 ```bash
 xcodebuild test \
   -project MeetingCaptionTranslator.xcodeproj \
@@ -79,47 +120,32 @@ xcodebuild test \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-## 実行
-ビルドまたは実行する前に、Xcode で `MeetingCaptionTranslator.xcodeproj` を開き、`Signing & Capabilities` で Team と署名 ID を選択してください。ローカル開発では `Apple Development` で十分です。初回使用時には、次の権限を許可してください。
-- `System Audio Recording`（システム音声を使う場合）
-- `Microphone`（マイクを使う場合）
-- `Speech Recognition`（Apple Speech 使用時）
+これらは署名を無効にしたビルド・テスト用コマンドです。実際の音声取得や権限の確認には、署名済みアプリを使用してください。アプリは Core Audio tap によるシステム音声の取得のため、App Sandbox を無効にしています。
 
-Apple Speech を使う場合は、事前に Live Caption の言語モデルをダウンロードしてください。詳細は「macOS の Live Caption について」を参照してください。
+### リリース成果物と speech.cpp
 
-既定の Bundle Identifier は `tools/generate_project.rb` で定義されています。自分の Team や配布方法に合わせて Bundle Identifier を変更する場合は、`PRODUCT_BUNDLE_IDENTIFIER` を編集してから `bundle exec ruby tools/generate_project.rb` を再実行してください。Bundle Identifier を変更すると macOS のプライバシー許可は別アプリとして扱われるため、権限の再付与が必要です。
+```bash
+tools/build_speech.sh
+ruby tools/build_release.rb
+```
 
-`Audio Input` で `Mac System Audio` または `Microphone` を選択します。マイクは macOS の標準入力デバイスを使用します。入力は停止中に切り替えられ、既定値はシステム音声です。
+`build_speech.sh` は固定された speech.cpp 0.9.4 をソースからビルドします。続くアプリビルドでは、生成した `speech` 実行ファイルをアプリに同梱します。ビルドは実行した Mac の CPU 向けです。別アーキテクチャで使用する場合は、その環境で speech.cpp をビルドしてください。`build_release.rb` は成果物を `dist/MeetingCaptionTranslator.app` にコピーし、既存の `dist` ディレクトリを置き換えます。
 
-`Language Direction` で `English -> Japanese` または `Japanese -> English` を選択します。`Speech Recognition` で `Apple Speech` または speech.cpp を選べます。speech.cpp では英語入力に Qwen3-ASR 0.6B、日本語入力に Haas-ja を使用します。言語方向と認識エンジンは停止中に変更でき、選択内容は保存されます。Apple Speech を選択した場合は `Download Apple Speech Model` で選択中の入力言語のモデルを事前に準備できます。準備中はスピナーが表示されます。`Start` を押すと音声のキャプチャと文字起こしが始まります。
+`speech` が同梱されていない場合、アプリは `~/.local/bin/speech`、`/opt/homebrew/bin/speech`、`/usr/local/bin/speech` の順に外部インストールを探します。
 
-診断目的で意図的に未署名ビルドが必要な場合は、コマンドに `CODE_SIGNING_ALLOWED=NO` を指定して上書きしてください。そのビルドを権限テストに使用しないでください。macOS TCC はアプリの署名を使ってプライバシー許可を記憶するため、未署名ビルドでは起動のたびに `Speech Recognition` の許可を再要求される可能性があります。
+### ディレクトリ構成
 
-## プライバシー
-このアプリは、ユーザーが `Start` を押している間だけ 選択したシステム音声またはマイク音声をキャプチャし、Apple Speech またはローカルの speech.cpp で文字起こしし、Apple の Translation framework で翻訳します。このリポジトリの実装には、開発者が運用する外部サーバー、外部 API キー、独自の認証情報は含まれていません。
-
-キャプチャした音声は、このアプリではファイルに保存しません。字幕履歴はアプリ実行中のメモリ内に保持され、最大 500 行までに制限されます。永続化されるのは、言語方向などのアプリ設定のみです。Apple framework による音声認識および翻訳処理は、ユーザーの macOS 環境と Apple の各 framework の動作に従います。
-
-## アーキテクチャ
-- `SystemPlaybackCaptureService`: Mac のシステム音声ソース用 Core Audio tap
-- `MicrophoneCaptureService`: macOS の標準マイク入力用 AVAudioEngine
-- `LiveTranscriptionService`: `SpeechAnalyzer` / `SpeechTranscriber`
-- `HaasTranscriptionService`: speech.cpp worker を使った日本語音声認識
-- `AppleTranslationService`: `TranslationSession`
-- `CaptionPipelineService`: 部分字幕と確定字幕の調整
-- `OverlayWindowManager`: 常に最前面に表示される AppKit オーバーレイウィンドウ
-
-## 補足
-- 入力/出力言語は `Language Direction` で英語 -> 日本語または日本語 -> 英語を選択できます。既定値は `CaptionLanguagePair.defaultPair` により英語 -> 日本語です。
-- システム音声またはマイクを入力に選択できます。ディスプレイ選択機能はありません。
-- ソースファイルを追加または削除した後は、`bundle exec ruby tools/generate_project.rb` を再実行してください。
-
-## speech.cpp による音声認識
-
-英語入力では Qwen3-ASR 0.6B、日本語入力では Haas-ja と Apple Speech を切り替えられます。`ruby tools/install_app.rb` は speech.cpp を準備し、モデルをダウンロードしてからアプリをインストールします。手動で Xcode ビルドする場合、speech.cpp を同梱するには `tools/build_speech.sh` を先に実行してください。SpeechCxx.jl と同じくソースおよび固定された ggml を CMake でビルドします（speech.cpp 0.9.4）。生成物は次のアプリビルド時に同梱されます。ビルドは実行した Mac の CPU 向けです。別アーキテクチャの Mac 向けにはその環境でビルドしてください。同梱されない場合、アプリは `~/.local/bin/speech`、`/opt/homebrew/bin/speech`、`/usr/local/bin/speech` の順に外部インストールを探します（0.9.3 以降）。
-
-インストール時にモデルを取得しなかった場合は、初回使用時にモデル（Haas-ja 約 0.66 GB、Qwen3-ASR 約 0.84 GB）のダウンロードと読み込みが必要です。認識はローカルで実行されますが、初回ダウンロードにはインターネット接続が必要です。字幕は発話の切れ目で確定するため、Apple Speech より表示が遅れることがあります。音量による簡易的な発話検出を使用するため、静かな声や騒音環境では認識が途切れることがあります。Qwen3-ASR の英語認識精度は話者や音声環境によって異なります。
+| パス | 内容 |
+| --- | --- |
+| `MeetingCaptionTranslator/App/` | アプリのエントリーポイントと操作画面 |
+| `MeetingCaptionTranslator/Models/` | 設定や字幕などの値型 |
+| `MeetingCaptionTranslator/Services/` | 音声取得、認識、翻訳、字幕処理、設定保存 |
+| `MeetingCaptionTranslator/ViewModels/` | 状態管理と画面への受け渡し |
+| `MeetingCaptionTranslator/Views/`、`Infrastructure/` | オーバーレイ表示とウィンドウ管理 |
+| `MeetingCaptionTranslatorTests/` | XCTest テスト |
+| `tools/` | プロジェクト生成、ビルド、インストールのスクリプト |
+| `docs/plans/` | 設計・実装メモ |
 
 ## ライセンス
 
-MIT License です。詳細は [LICENSE](LICENSE) を参照してください。
+[MIT License](LICENSE)
