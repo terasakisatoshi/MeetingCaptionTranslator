@@ -9,6 +9,10 @@ struct HaasSegmenter {
     private var silence = 0
     private var active = false
 
+    init(sampleRate: Int) {
+        self.sampleRate = sampleRate
+    }
+
     mutating func append(_ samples: [Float]) -> [[Float]] {
         pending.append(contentsOf: samples)
         let window = max(1, sampleRate / 50)

@@ -1,0 +1,54 @@
+name: Verify installation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Show environment
+        run: |
+          sw_vers
+          xcodebuild -version
+          cmake --version
+          ruby --version
+
+      - name: Run installer tests
+        run: |
+          ruby tools/build_release_test.rb
+          ruby tools/install_app_test.rb
+
+      - name: Run XCTest suite
+        run: |
+          xcodebuild test \
+            -project MeetingCaptionTranslator.xcodeproj \
+            -scheme MeetingCaptionTranslatorTests \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Install application
+        run: |
+          # The hosted runner is disposable; grant its user access to the normal install destination.
+          sudo chown "$(id -un)" /Applications
+          printf 'CODE_SIGNING_ALLOWED = NO\n' > "$RUNNER_TEMP/ci.xcconfig"
+          export XCODE_XCCONFIG_FILE="$RUNNER_TEMP/ci.xcconfig"
+          ruby tools/install_app.rb
+
+      - name: Verify installed application
+        run: |
+          app=/Applications/MeetingCaptionTranslator.app
+          test -x "$app/Contents/MacOS/MeetingCaptionTranslator"
+          test -x "$app/Contents/Resources/speech"
+          test -f "$app/Contents/Resources/speech.LICENSE"
+          test -f "$app/Contents/Resources/speech.ggml-LICENSE"
+          "$app/Contents/Resources/speech" --version
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist"
