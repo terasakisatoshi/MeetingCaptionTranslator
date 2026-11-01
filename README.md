@@ -91,7 +91,7 @@ Apple Speech を使う場合は、事前に Live Caption の言語モデルを�
 
 `Audio Input` で `Mac System Audio` または `Microphone` を選択します。マイクは macOS の標準入力デバイスを使用します。入力は停止中に切り替えられ、既定値はシステム音声です。
 
-`Language Direction` で `English -> Japanese` または `Japanese -> English` を選択します。`Speech Recognition` で `Apple Speech` または speech.cpp を選べます。speech.cpp では英語入力に Qwen3-ASR 0.6B、日本語入力に Haas-ja を使用します。言語方向と認識エンジンは停止中に変更でき、選択内容は保存されます。`Start` を押すと音声のキャプチャと文字起こしが始まります。
+`Language Direction` で `English -> Japanese` または `Japanese -> English` を選択します。`Speech Recognition` で `Apple Speech` または speech.cpp を選べます。speech.cpp では英語入力に Qwen3-ASR 0.6B、日本語入力に Haas-ja を使用します。言語方向と認識エンジンは停止中に変更でき、選択内容は保存されます。Apple Speech を選択した場合は `Download Apple Speech Model` で選択中の入力言語のモデルを事前に準備できます。準備中はスピナーが表示されます。`Start` を押すと音声のキャプチャと文字起こしが始まります。
 
 診断目的で意図的に未署名ビルドが必要な場合は、コマンドに `CODE_SIGNING_ALLOWED=NO` を指定して上書きしてください。そのビルドを権限テストに使用しないでください。macOS TCC はアプリの署名を使ってプライバシー許可を記憶するため、未署名ビルドでは起動のたびに `Speech Recognition` の許可を再要求される可能性があります。
 

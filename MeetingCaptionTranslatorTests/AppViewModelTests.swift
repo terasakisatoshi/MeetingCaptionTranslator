@@ -5,6 +5,41 @@ import XCTest
 
 @MainActor
 final class AppViewModelTests: XCTestCase {
+    func test_prepareAppleSpeechModel_showsProgressAndUsesSelectedLanguage() async {
+        var requestedLocale: String?
+        var continuation: CheckedContinuation<Void, Never>?
+        let viewModel = AppViewModel(
+            settingsStore: makeSettingsStore(),
+            appleSpeechModelPreparer: { locale in
+                requestedLocale = locale.identifier
+                await withCheckedContinuation { continuation = $0 }
+            }
+        )
+        viewModel.updateLanguagePair(.japaneseToEnglish)
+        viewModel.prepareAppleSpeechModel()
+        XCTAssertTrue(viewModel.isPreparingAppleSpeechModel)
+        viewModel.updateLanguagePair(.englishToJapanese)
+        viewModel.start()
+        XCTAssertEqual(viewModel.languagePair, .japaneseToEnglish)
+        XCTAssertEqual(viewModel.appState, .idle)
+        await waitUntil { continuation != nil }
+        XCTAssertEqual(requestedLocale, "ja-JP")
+        continuation?.resume()
+        await waitUntil { !viewModel.isPreparingAppleSpeechModel }
+        XCTAssertEqual(viewModel.appleSpeechModelMessage, "Apple Speech model is ready.")
+    }
+
+    func test_prepareAppleSpeechModel_reportsFailureAndAllowsRetry() async {
+        let viewModel = AppViewModel(
+            settingsStore: makeSettingsStore(),
+            appleSpeechModelPreparer: { _ in throw TestError.message("Download failed") }
+        )
+        viewModel.prepareAppleSpeechModel()
+        await waitUntil { !viewModel.isPreparingAppleSpeechModel }
+        XCTAssertEqual(viewModel.errorMessage, "Download failed")
+        XCTAssertNil(viewModel.appleSpeechModelMessage)
+    }
+
     func test_microphoneTap_acceptsAudioFromBackgroundQueue() async throws {
         let received = expectation(description: "microphone frame received")
         let callback = MicrophoneCaptureService.makeTapHandler { frame in

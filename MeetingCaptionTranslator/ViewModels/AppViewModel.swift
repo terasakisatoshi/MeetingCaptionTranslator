@@ -1,6 +1,7 @@
 import AVFoundation
 import Combine
 import Foundation
+import Speech
 
 protocol AppViewModelTranscriptionServicing: Sendable {
     func start(
@@ -125,10 +126,13 @@ final class AppViewModel: ObservableObject {
     @Published private(set) var selectedMicrophoneID: String = ""
     var selectedTargetDescription: String { audioInput.title }
     @Published private(set) var transcriptionEngine: TranscriptionEngine
+    @Published private(set) var isPreparingAppleSpeechModel = false
+    @Published private(set) var appleSpeechModelMessage: String?
     @Published private(set) var languagePair: CaptionLanguagePair
 
     let overlayViewModel: OverlayViewModel
 
+    private let appleSpeechModelPreparer: @MainActor (Locale) async throws -> Void
     private let settingsStore: AppSettingsStore
     private let systemCaptureService: any CaptureServicing
     private let microphoneCaptureService: any CaptureServicing
@@ -150,6 +154,9 @@ final class AppViewModel: ObservableObject {
 
     init(
         settingsStore: AppSettingsStore = AppSettingsStore(),
+        appleSpeechModelPreparer: @escaping @MainActor (Locale) async throws -> Void = { locale in
+            _ = try await SpeechTranscriberPreparation(requestedLocale: locale, preset: .timeIndexedProgressiveTranscription).prepare()
+        },
         captureService: any CaptureServicing = SystemPlaybackCaptureService(),
         microphoneCaptureService: any CaptureServicing = MicrophoneCaptureService(),
         transcriptionServiceFactory: @escaping @MainActor (Locale) -> any AppViewModelTranscriptionServicing = { (locale: Locale) -> any AppViewModelTranscriptionServicing in
@@ -165,6 +172,7 @@ final class AppViewModel: ObservableObject {
             OverlayWindowManager(viewModel: viewModel, onSizeChange: onSizeChange)
         }
     ) {
+        self.appleSpeechModelPreparer = appleSpeechModelPreparer
         self.settingsStore = settingsStore
         self.systemCaptureService = captureService
         self.microphoneCaptureService = microphoneCaptureService
@@ -202,12 +210,30 @@ final class AppViewModel: ObservableObject {
     }
 
     func start() {
-        guard !appState.isRunning, appState != .preparing else { return }
+        guard !appState.isRunning, appState != .preparing, !isPreparingAppleSpeechModel else { return }
         lifecycleToken &+= 1
         let token = lifecycleToken
         appState = .preparing
         Task {
             await startCapture(token: token)
+        }
+    }
+
+    func prepareAppleSpeechModel() {
+        guard transcriptionEngine == .apple, !appState.isRunning,
+              appState != .preparing, !isPreparingAppleSpeechModel else { return }
+        let locale = Locale(identifier: languagePair.speechLocaleIdentifier)
+        isPreparingAppleSpeechModel = true
+        appleSpeechModelMessage = nil
+        errorMessage = nil
+        Task {
+            do {
+                try await appleSpeechModelPreparer(locale)
+                appleSpeechModelMessage = "Apple Speech model is ready."
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            isPreparingAppleSpeechModel = false
         }
     }
 
@@ -281,17 +307,19 @@ final class AppViewModel: ObservableObject {
     }
 
     func updateTranscriptionEngine(_ engine: TranscriptionEngine) {
-        guard !appState.isRunning, appState != .preparing else { return }
+        guard !appState.isRunning, appState != .preparing, !isPreparingAppleSpeechModel else { return }
+        appleSpeechModelMessage = nil
         transcriptionEngine = engine
         settings.transcriptionEngine = engine
         try? settingsStore.save(settings)
     }
 
     func updateLanguagePair(_ languagePair: CaptionLanguagePair) {
-        guard !appState.isRunning, appState != .preparing else {
+        guard !appState.isRunning, appState != .preparing, !isPreparingAppleSpeechModel else {
             return
         }
 
+        appleSpeechModelMessage = nil
         settings.languagePair = languagePair
         self.languagePair = languagePair
         try? settingsStore.save(settings)

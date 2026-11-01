@@ -28,7 +28,7 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
+                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing || viewModel.isPreparingAppleSpeechModel)
 
                 if viewModel.audioInput == .microphone {
                     Picker("Microphone", selection: Binding(
@@ -44,7 +44,7 @@ struct ContentView: View {
                             Text("Selected microphone unavailable").tag(viewModel.selectedMicrophoneID)
                         }
                     }
-                    .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
+                    .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing || viewModel.isPreparingAppleSpeechModel)
                 }
             }
 
@@ -64,7 +64,7 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
+                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing || viewModel.isPreparingAppleSpeechModel)
             }
 
             VStack(alignment: .leading, spacing: 8) {
@@ -79,7 +79,22 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing)
+                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing || viewModel.isPreparingAppleSpeechModel)
+
+                if viewModel.transcriptionEngine == .apple {
+                    HStack(spacing: 8) {
+                        Button("Download Apple Speech Model") {
+                            viewModel.prepareAppleSpeechModel()
+                        }
+                        .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing || viewModel.isPreparingAppleSpeechModel)
+                        if viewModel.isPreparingAppleSpeechModel {
+                            ProgressView().controlSize(.small)
+                            Text("Preparing model…").foregroundStyle(.secondary)
+                        } else if let message = viewModel.appleSpeechModelMessage {
+                            Text(message).foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -118,6 +133,7 @@ struct ContentView: View {
                     viewModel.start()
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(viewModel.isPreparingAppleSpeechModel || viewModel.appState.isRunning || viewModel.appState == .preparing)
 
                 Button("Stop") {
                     viewModel.stop()
@@ -127,8 +143,13 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Status")
                     .font(.headline)
-                Text(viewModel.appState.statusText)
-                    .foregroundStyle(.secondary)
+                HStack {
+                    if viewModel.appState == .preparing {
+                        ProgressView().controlSize(.small)
+                    }
+                    Text(viewModel.appState.statusText)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             VStack(alignment: .leading, spacing: 4) {
