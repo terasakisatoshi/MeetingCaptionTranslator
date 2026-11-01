@@ -149,3 +149,7 @@ ruby tools/build_release.rb
 ## ライセンス
 
 [MIT License](LICENSE)
+
+### GitHub Actions でのインストール検証
+
+`Verify installation` ワークフローは push、プルリクエスト、手動実行で起動します。macOS 26 の GitHub-hosted runner でテストを実行し、上記のインストールスクリプトによる speech.cpp のビルド、両モデルのダウンロード、アプリのビルドと `/Applications` への配置を確認します。CI のアプリは署名を無効にしているため、署名・公証や音声入力の権限、実際の字幕表示はこのワークフローの検証対象には含まれません。
