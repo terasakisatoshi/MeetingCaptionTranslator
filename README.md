@@ -95,12 +95,9 @@ speech.cpp の字幕は発話の切れ目で確定します。音量による簡
 
 ### セットアップ
 
-```bash
-bundle install
-bundle exec ruby tools/generate_project.rb
-```
+追加のセットアップは不要です。Xcode プロジェクトは `MeetingCaptionTranslator/` と `MeetingCaptionTranslatorTests/` をフォルダごと参照するため、ソースファイルを追加または削除してもプロジェクトの更新は要りません。
 
-ソースファイルを追加または削除した後も、`tools/generate_project.rb` を再実行してください。Xcode で `MeetingCaptionTranslator.xcodeproj` を開いて実行する場合は、`Signing & Capabilities` で Team と署名 ID を設定します。Bundle Identifier を変更する場合は `tools/generate_project.rb` の `PRODUCT_BUNDLE_IDENTIFIER` を編集してプロジェクトを再生成します。変更後は macOS の権限を再付与する必要があります。
+Xcode で `MeetingCaptionTranslator.xcodeproj` を開いて実行する場合は、`Signing & Capabilities` で Team と署名 ID を設定します。Bundle Identifier を変更する場合は Xcode のターゲット設定で `PRODUCT_BUNDLE_IDENTIFIER` を編集します。変更後は macOS の権限を再付与する必要があります。
 
 ### ビルドとテスト
 

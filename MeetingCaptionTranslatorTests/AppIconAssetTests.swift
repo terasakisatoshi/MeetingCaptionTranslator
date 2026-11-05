@@ -35,13 +35,15 @@ final class AppIconAssetTests: XCTestCase {
         }
     }
 
-    func test_projectGenerator_configuresAppIconName() throws {
+    func test_project_configuresAppIconName() throws {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-        let generatorURL = root.appendingPathComponent("tools/generate_project.rb")
-        let generator = try String(contentsOf: generatorURL)
+        let project = try String(
+            contentsOf: root.appendingPathComponent("MeetingCaptionTranslator.xcodeproj/project.pbxproj"),
+            encoding: .utf8
+        )
 
-        XCTAssertTrue(generator.contains("\"ASSETCATALOG_COMPILER_APPICON_NAME\"] = \"AppIcon\""))
+        XCTAssertTrue(project.contains("ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;"))
     }
 }

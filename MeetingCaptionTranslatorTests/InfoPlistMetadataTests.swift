@@ -13,15 +13,4 @@ final class InfoPlistMetadataTests: XCTestCase {
             "This app captures Mac playback audio to transcribe live captions."
         )
     }
-
-    func test_generatorSeedInfoPlist_containsAudioCaptureUsageDescription() throws {
-        let root = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let generatorURL = root.appendingPathComponent("tools/generate_project.rb")
-        let generator = try String(contentsOf: generatorURL)
-
-        XCTAssertTrue(generator.contains("<key>NSAudioCaptureUsageDescription</key>"))
-        XCTAssertTrue(generator.contains("This app captures Mac playback audio to transcribe live captions."))
-    }
 }
