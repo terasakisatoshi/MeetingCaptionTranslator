@@ -40,8 +40,8 @@ ruby tools/install_app.rb
 
 1. MeetingCaptionTranslator を起動します。
 2. **Audio Input** で `Mac System Audio` または `Microphone` を選びます。マイクの場合は、システムの既定入力または一覧からデバイスを選べます。
-3. **Language Direction** で `English -> Japanese` または `Japanese -> English` を選びます。
-4. **Speech Recognition** で Apple Speech または speech.cpp のモデルを選びます。Apple Speech のモデルは `Download Apple Speech Model` で事前に準備できます。
+3. **Language Direction** で `English -> Japanese`、`Japanese -> English`、または `Auto (EN <-> JA)` を選びます。`Auto` は英語と日本語が交互に出てくる音声向けで、発話ごとに言語を判定して翻訳方向を切り替えます。
+4. **Speech Recognition** で Apple Speech または speech.cpp のモデルを選びます。Apple Speech のモデルは `Download Apple Speech Model` で事前に準備できます。`Auto` では speech.cpp に固定されます。
 5. **Start** を押し、必要な権限を許可します。停止するには **Stop** を押します。
 
 字幕ウィンドウは端や角をドラッグしてサイズを変更できます。コントロールウィンドウの **Opacity** と **Font Size** で見た目を調整できます。言語方向と音声認識エンジンは停止中に変更でき、選択は保存されます。既定の入力はシステム音声、既定の言語方向は英語 → 日本語、既定の音声認識エンジンは Apple Speech です。
@@ -64,6 +64,13 @@ ruby tools/install_app.rb
 | --- | --- | --- |
 | 英語 → 日本語 | 英語モデル | Qwen3-ASR 0.6B |
 | 日本語 → 英語 | 日本語モデル | Haas-ja |
+| Auto（英語 ⇄ 日本語） | 非対応 | Qwen3-ASR 0.6B（言語は自動判定） |
+
+### Auto（英語 ⇄ 日本語）
+
+Apple Speech は認識する言語を 1 つに固定するため、`Auto` では Qwen3-ASR が英語と日本語の両方を認識します。翻訳方向は発話ごとに決まり、認識結果にかな・漢字が含まれていれば日本語 → 英語、なければ英語 → 日本語です。英語 → 日本語と日本語 → 英語の両方の翻訳言語が macOS にインストールされている必要があります。
+
+発話は無音で区切るため、間を置かずに言語が切り替わると 1 つの発話に両方の言語が入り、その発話は日本語 → 英語として翻訳されます。日本語の認識精度は Haas-ja を使う `Japanese -> English` より下がることがあります。
 
 ### Apple Speech
 

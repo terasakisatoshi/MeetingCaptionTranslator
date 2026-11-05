@@ -7,13 +7,6 @@ final class CoreModelTests: XCTestCase {
         XCTAssertEqual(CaptionLanguagePair.defaultPair.targetLanguage, "ja")
     }
 
-    func test_caption_language_pair_exposes_supported_translation_directions() {
-        XCTAssertEqual(CaptionLanguagePair.supportedPairs, [
-            .englishToJapanese,
-            .japaneseToEnglish
-        ])
-    }
-
     func test_caption_language_pair_exposes_speech_locale_and_display_title() {
         XCTAssertEqual(CaptionLanguagePair.englishToJapanese.sourceLanguage, "en")
         XCTAssertEqual(CaptionLanguagePair.englishToJapanese.targetLanguage, "ja")
@@ -24,6 +17,40 @@ final class CoreModelTests: XCTestCase {
         XCTAssertEqual(CaptionLanguagePair.japaneseToEnglish.targetLanguage, "en")
         XCTAssertEqual(CaptionLanguagePair.japaneseToEnglish.speechLocaleIdentifier, "ja-JP")
         XCTAssertEqual(CaptionLanguagePair.japaneseToEnglish.displayTitle, "Japanese -> English")
+    }
+
+    func test_auto_language_pair_is_offered_after_the_fixed_directions() {
+        XCTAssertEqual(CaptionLanguagePair.supportedPairs, [
+            .englishToJapanese,
+            .japaneseToEnglish,
+            .auto
+        ])
+        XCTAssertTrue(CaptionLanguagePair.auto.isAutomatic)
+        XCTAssertFalse(CaptionLanguagePair.englishToJapanese.isAutomatic)
+        XCTAssertEqual(CaptionLanguagePair.auto.displayTitle, "Auto (EN <-> JA)")
+    }
+
+    func test_translation_direction_for_english_text_is_english_to_japanese() {
+        XCTAssertEqual(
+            CaptionLanguagePair.translationDirection(forSourceText: "Thank you for joining the meeting today."),
+            .englishToJapanese
+        )
+    }
+
+    func test_translation_direction_for_japanese_text_is_japanese_to_english() {
+        XCTAssertEqual(
+            CaptionLanguagePair.translationDirection(forSourceText: "はい、わかりました。"),
+            .japaneseToEnglish
+        )
+        XCTAssertEqual(CaptionLanguagePair.translationDirection(forSourceText: "カタカナ"), .japaneseToEnglish)
+        XCTAssertEqual(CaptionLanguagePair.translationDirection(forSourceText: "会議"), .japaneseToEnglish)
+    }
+
+    func test_translation_direction_for_japanese_text_with_english_terms_is_japanese_to_english() {
+        XCTAssertEqual(
+            CaptionLanguagePair.translationDirection(forSourceText: "Claude Code を使っています"),
+            .japaneseToEnglish
+        )
     }
 
     func test_caption_line_can_apply_partial_update() {

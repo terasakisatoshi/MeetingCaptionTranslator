@@ -53,12 +53,21 @@ enum HaasTranscriptionError: LocalizedError {
 }
 
 actor HaasTranscriptionService: AppViewModelTranscriptionServicing {
-    private let model: String
-    private let language: String?
+    private let arguments: [String]
 
-    init(model: String = "haas-ja-v1.0", language: String? = nil) {
-        self.model = model
-        self.language = language
+    init(languagePair: CaptionLanguagePair) {
+        arguments = Self.workerArguments(for: languagePair)
+    }
+
+    // Haas-ja hears Japanese alone. Qwen3-ASR is steered by a language, and finds it itself without one.
+    nonisolated static func workerArguments(for languagePair: CaptionLanguagePair) -> [String] {
+        if languagePair.isAutomatic {
+            return ["worker", "qwen3-asr-0.6b"]
+        }
+        if languagePair.sourceLanguage == "ja" {
+            return ["worker", "haas-ja-v1.0"]
+        }
+        return ["worker", "qwen3-asr-0.6b", "--language", languagePair.sourceLanguage]
     }
 
     private let converter = AudioBufferConverter()
@@ -93,7 +102,7 @@ actor HaasTranscriptionService: AppViewModelTranscriptionServicing {
         let stdin = Pipe()
         let stdout = Pipe()
         process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = ["worker", model] + (language.map { ["--language", $0] } ?? [])
+        process.arguments = arguments
         process.standardInput = stdin
         process.standardOutput = stdout
         process.standardError = FileHandle.nullDevice

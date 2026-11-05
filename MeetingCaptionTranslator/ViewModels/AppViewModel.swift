@@ -138,6 +138,7 @@ final class AppViewModel: ObservableObject {
     private let microphoneCaptureService: any CaptureServicing
     private var captureService: any CaptureServicing { audioInput == .systemAudio ? systemCaptureService : microphoneCaptureService }
     private let transcriptionServiceFactory: @MainActor (Locale) -> any AppViewModelTranscriptionServicing
+    private let speechWorkerTranscriptionServiceFactory: @MainActor (CaptionLanguagePair) -> any AppViewModelTranscriptionServicing
     private let translationServiceFactory: @MainActor (CaptionLanguagePair) -> any AppViewModelTranslationServicing
     private let captionPipelineServiceFactory: @MainActor (Int, @escaping (String) async throws -> String) -> any AppViewModelCaptionPipelineServicing
     private let overlayWindowManagerFactory: @MainActor (OverlayViewModel, @escaping @MainActor (CGSize) -> Void) -> any OverlayWindowManaging
@@ -162,6 +163,9 @@ final class AppViewModel: ObservableObject {
         transcriptionServiceFactory: @escaping @MainActor (Locale) -> any AppViewModelTranscriptionServicing = { (locale: Locale) -> any AppViewModelTranscriptionServicing in
             LiveTranscriptionServiceAdapter(locale: locale)
         },
+        speechWorkerTranscriptionServiceFactory: @escaping @MainActor (CaptionLanguagePair) -> any AppViewModelTranscriptionServicing = { (languagePair: CaptionLanguagePair) -> any AppViewModelTranscriptionServicing in
+            HaasTranscriptionService(languagePair: languagePair)
+        },
         translationServiceFactory: @escaping @MainActor (CaptionLanguagePair) -> any AppViewModelTranslationServicing = { (languagePair: CaptionLanguagePair) -> any AppViewModelTranslationServicing in
             AppleTranslationServiceAdapter(languagePair: languagePair)
         },
@@ -177,6 +181,7 @@ final class AppViewModel: ObservableObject {
         self.systemCaptureService = captureService
         self.microphoneCaptureService = microphoneCaptureService
         self.transcriptionServiceFactory = transcriptionServiceFactory
+        self.speechWorkerTranscriptionServiceFactory = speechWorkerTranscriptionServiceFactory
         self.translationServiceFactory = translationServiceFactory
         self.captionPipelineServiceFactory = captionPipelineServiceFactory
         self.overlayWindowManagerFactory = overlayWindowManagerFactory
@@ -308,6 +313,8 @@ final class AppViewModel: ObservableObject {
 
     func updateTranscriptionEngine(_ engine: TranscriptionEngine) {
         guard !appState.isRunning, appState != .preparing, !isPreparingAppleSpeechModel else { return }
+        // Apple Speech hears one fixed language, so it cannot serve the automatic direction.
+        guard !(languagePair.isAutomatic && engine == .apple) else { return }
         appleSpeechModelMessage = nil
         transcriptionEngine = engine
         settings.transcriptionEngine = engine
@@ -322,6 +329,10 @@ final class AppViewModel: ObservableObject {
         appleSpeechModelMessage = nil
         settings.languagePair = languagePair
         self.languagePair = languagePair
+        if languagePair.isAutomatic {
+            transcriptionEngine = .haas
+            settings.transcriptionEngine = .haas
+        }
         try? settingsStore.save(settings)
     }
 
@@ -353,13 +364,13 @@ final class AppViewModel: ObservableObject {
         let captureService = captureService
         let transcriptionService: any AppViewModelTranscriptionServicing
         if transcriptionEngine == .haas {
-            transcriptionService = languagePair.sourceLanguage == "ja"
-                ? HaasTranscriptionService()
-                : HaasTranscriptionService(model: "qwen3-asr-0.6b", language: "en")
+            transcriptionService = speechWorkerTranscriptionServiceFactory(languagePair)
         } else {
             transcriptionService = transcriptionServiceFactory(Locale(identifier: settings.languagePair.speechLocaleIdentifier))
         }
-        let translationService = translationServiceFactory(settings.languagePair)
+        let translationService: any AppViewModelTranslationServicing = languagePair.isAutomatic
+            ? BidirectionalTranslationService(makeService: translationServiceFactory)
+            : translationServiceFactory(settings.languagePair)
         var captionPipelineService: (any AppViewModelCaptionPipelineServicing)?
         var frameRelay: CapturedFrameRelay?
 
