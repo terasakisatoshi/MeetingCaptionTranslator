@@ -19,4 +19,18 @@ final class ProjectLayoutSmokeTests: XCTestCase {
             )
         }
     }
+
+    func test_project_takes_sources_from_the_folders_without_listing_each_file() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let project = try String(
+            contentsOf: root.appendingPathComponent("MeetingCaptionTranslator.xcodeproj/project.pbxproj"),
+            encoding: .utf8
+        )
+
+        XCTAssertTrue(project.contains("isa = PBXFileSystemSynchronizedRootGroup;"))
+        XCTAssertFalse(project.contains("ContentView.swift"), "A source file is still listed by name")
+        XCTAssertFalse(project.contains("ProjectLayoutSmokeTests.swift"), "A test file is still listed by name")
+    }
 }

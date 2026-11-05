@@ -1,10 +1,10 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-`MeetingCaptionTranslator/` contains the app target. Use `App/` for entry points and top-level UI, `Models/` for value types, `Services/` for framework-facing logic, `ViewModels/` for state orchestration, `Views/` for SwiftUI views, `Infrastructure/` for AppKit/window glue, and `Resources/` for plist, entitlements, and assets. Tests live in `MeetingCaptionTranslatorTests/`. Design and implementation notes belong in `docs/plans/`. Regenerate the Xcode project through `tools/generate_project.rb` after adding or removing source files.
+`MeetingCaptionTranslator/` contains the app target. Use `App/` for entry points and top-level UI, `Models/` for value types, `Services/` for framework-facing logic, `ViewModels/` for state orchestration, `Views/` for SwiftUI views, `Infrastructure/` for AppKit/window glue, and `Resources/` for plist, entitlements, and assets. Tests live in `MeetingCaptionTranslatorTests/`. Design and implementation notes belong in `docs/plans/`. The Xcode project takes both folders from the filesystem (file-system-synchronized groups), so adding or removing a source file needs no project change.
 
 ## Build, Test, and Development Commands
-Run `bundle install` once to install the `xcodeproj` gem. Use `bundle exec ruby tools/generate_project.rb` to rebuild `MeetingCaptionTranslator.xcodeproj` from the filesystem. Build with `xcodebuild build -project MeetingCaptionTranslator.xcodeproj -scheme MeetingCaptionTranslator -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO`. Run tests with `xcodebuild test -project MeetingCaptionTranslator.xcodeproj -scheme MeetingCaptionTranslatorTests -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO`.
+Build with `xcodebuild build -project MeetingCaptionTranslator.xcodeproj -scheme MeetingCaptionTranslator -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO`. Run tests with `xcodebuild test -project MeetingCaptionTranslator.xcodeproj -scheme MeetingCaptionTranslatorTests -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO`.
 
 ## Coding Style & Naming Conventions
 Follow Swift 6 conventions: 4-space indentation, one top-level type per file when practical, `UpperCamelCase` for types, `lowerCamelCase` for properties and methods. Keep service boundaries explicit: capture, speech, translation, persistence, and caption pipeline should remain isolated. Favor small value types in `Models/` and put Apple framework integration behind service APIs.

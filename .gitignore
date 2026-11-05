@@ -1,8 +1,5 @@
 .DS_Store
 
-.bundle/
-vendor/bundle/
-
 DerivedData/
 build/
 dist/
