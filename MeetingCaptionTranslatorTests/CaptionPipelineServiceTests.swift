@@ -161,6 +161,57 @@ final class CaptionPipelineServiceTests: XCTestCase {
     }
 }
 
+extension CaptionPipelineServiceTests {
+    func test_flushed_fragment_keeps_its_place_when_translation_finishes_after_a_newer_sentence() async {
+        let sleeper = ManualSleeper()
+        let translator = HeldTranslator(held: "First fragment")
+        let service = CaptionPipelineService(maximumVisibleLines: 4, flushSleep: sleeper.sleep, translator: translator.translate)
+
+        await service.handleTranscript(.init(sourceText: "First fragment", state: .final))
+        await sleeper.waitForSleep()
+        sleeper.wake()
+        await translator.waitUntilHeld()
+        let newer = Task { await service.handleTranscript(.init(sourceText: "Second sentence.", state: .final)) }
+        for _ in 0..<20 { await Task.yield() }
+        translator.release()
+        await newer.value
+        for _ in 0..<50 where service.historyLines.count < 2 { await Task.yield() }
+
+        XCTAssertEqual(service.historyLines.map(\.sourceText), ["First fragment", "Second sentence."])
+        XCTAssertEqual(service.historyLines.map(\.state), [.final, .final])
+    }
+}
+
+@MainActor
+private final class HeldTranslator {
+    private let held: String
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var isHeld = false
+
+    init(held: String) {
+        self.held = held
+    }
+
+    var translate: (String) async throws -> String {
+        { [self] text in
+            if text == held {
+                isHeld = true
+                await withCheckedContinuation { continuation = $0 }
+            }
+            return "t:\(text)"
+        }
+    }
+
+    func waitUntilHeld() async {
+        for _ in 0..<50 where !isHeld { await Task.yield() }
+    }
+
+    func release() {
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
 @MainActor
 private final class ManualSleeper {
     private var continuations: [CheckedContinuation<Void, Error>] = []
@@ -176,9 +227,9 @@ private final class ManualSleeper {
         for _ in 0..<50 where continuations.isEmpty { await Task.yield() }
     }
 
+    // Ends the oldest sleep, leaving any timer started after it waiting.
     func wake() {
-        let pending = continuations
-        continuations = []
-        pending.forEach { $0.resume() }
+        guard !continuations.isEmpty else { return }
+        continuations.removeFirst().resume()
     }
 }

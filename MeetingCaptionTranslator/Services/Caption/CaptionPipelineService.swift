@@ -10,6 +10,10 @@ final class CaptionPipelineService {
     private let flushSleep: @MainActor (Duration) async throws -> Void
     private var sentenceBuffer = SentenceBuffer()
     private var flushTask: Task<Void, Never>?
+    // Transcripts and flushes run one at a time, in arrival order, so a translation that finishes
+    // late cannot land after, or overwrite, the lines of a newer transcript.
+    private var lastOperation: Task<Void, Never>?
+    private var generation = 0
 
     private(set) var visibleLines: [CaptionLine] = []
     private(set) var historyLines: [CaptionLine] = []
@@ -29,9 +33,27 @@ final class CaptionPipelineService {
     }
 
     func handleTranscript(_ event: TranscriptEvent) async {
-        appState = .transcribing
         flushTask?.cancel()
         flushTask = nil
+        await enqueue { pipeline in
+            await pipeline.process(event)
+        }
+    }
+
+    private func enqueue(_ operation: @escaping @MainActor (CaptionPipelineService) async -> Void) async {
+        let previous = lastOperation
+        let generation = generation
+        let task = Task { [weak self] in
+            await previous?.value
+            guard let self, self.generation == generation else { return }
+            await operation(self)
+        }
+        lastOperation = task
+        await task.value
+    }
+
+    private func process(_ event: TranscriptEvent) async {
+        appState = .transcribing
 
         switch event.state {
         case .partial:
@@ -58,6 +80,8 @@ final class CaptionPipelineService {
     func stop() {
         flushTask?.cancel()
         flushTask = nil
+        generation += 1
+        lastOperation = nil
         sentenceBuffer = SentenceBuffer()
         captionStore.reset()
         visibleLines = []
@@ -77,11 +101,14 @@ final class CaptionPipelineService {
             } catch {
                 return
             }
-            guard !Task.isCancelled, let self, let text = self.sentenceBuffer.flush() else { return }
+            guard !Task.isCancelled, let self else { return }
             self.flushTask = nil
-            await self.translateAndIngest(text)
-            self.publishLines()
-            self.onUpdate?()
+            await self.enqueue { pipeline in
+                guard let text = pipeline.sentenceBuffer.flush() else { return }
+                await pipeline.translateAndIngest(text)
+                pipeline.publishLines()
+                pipeline.onUpdate?()
+            }
         }
     }
 
