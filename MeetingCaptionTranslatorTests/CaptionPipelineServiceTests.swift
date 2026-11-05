@@ -19,14 +19,14 @@ final class CaptionPipelineServiceTests: XCTestCase {
 
     func test_final_transcript_applies_translation() async {
         let service = CaptionPipelineService(maximumVisibleLines: 4) { sourceText in
-            XCTAssertEqual(sourceText, "hello world")
+            XCTAssertEqual(sourceText, "hello world.")
             return "こんにちは"
         }
 
-        await service.handleTranscript(.init(sourceText: "hello world", state: .final))
+        await service.handleTranscript(.init(sourceText: "hello world.", state: .final))
 
         XCTAssertEqual(service.visibleLines.count, 1)
-        XCTAssertEqual(service.visibleLines[0].sourceText, "hello world")
+        XCTAssertEqual(service.visibleLines[0].sourceText, "hello world.")
         XCTAssertEqual(service.visibleLines[0].translatedText, "こんにちは")
         XCTAssertEqual(service.visibleLines[0].state, .final)
         XCTAssertEqual(service.appState, .transcribing)
@@ -37,10 +37,10 @@ final class CaptionPipelineServiceTests: XCTestCase {
             throw AppError.translationUnavailable
         }
 
-        await service.handleTranscript(.init(sourceText: "system audio", state: .final))
+        await service.handleTranscript(.init(sourceText: "system audio.", state: .final))
 
         XCTAssertEqual(service.visibleLines.count, 1)
-        XCTAssertEqual(service.visibleLines[0].sourceText, "system audio")
+        XCTAssertEqual(service.visibleLines[0].sourceText, "system audio.")
         XCTAssertNil(service.visibleLines[0].translatedText)
         XCTAssertEqual(service.appState, .degraded(reason: .translationUnavailable))
     }
@@ -62,11 +62,123 @@ final class CaptionPipelineServiceTests: XCTestCase {
             "ja:\(sourceText)"
         }
 
-        await service.handleTranscript(.init(sourceText: "one", state: .final))
-        await service.handleTranscript(.init(sourceText: "two", state: .final))
-        await service.handleTranscript(.init(sourceText: "three", state: .final))
+        await service.handleTranscript(.init(sourceText: "one.", state: .final))
+        await service.handleTranscript(.init(sourceText: "two.", state: .final))
+        await service.handleTranscript(.init(sourceText: "three.", state: .final))
 
-        XCTAssertEqual(service.historyLines.map(\.sourceText), ["one", "two", "three"])
-        XCTAssertEqual(service.visibleLines.map(\.sourceText), ["two", "three"])
+        XCTAssertEqual(service.historyLines.map(\.sourceText), ["one.", "two.", "three."])
+        XCTAssertEqual(service.visibleLines.map(\.sourceText), ["two.", "three."])
+    }
+
+    func test_final_fragment_without_a_sentence_end_waits_untranslated() async {
+        let service = CaptionPipelineService(maximumVisibleLines: 4, flushSleep: { _ in try await Task.sleep(for: .seconds(60)) }) { _ in
+            XCTFail("a fragment should not be translated before its sentence ends")
+            return ""
+        }
+
+        await service.handleTranscript(.init(sourceText: "今日は会議で", state: .final))
+
+        XCTAssertEqual(service.visibleLines.count, 1)
+        XCTAssertEqual(service.visibleLines[0].sourceText, "今日は会議で")
+        XCTAssertNil(service.visibleLines[0].translatedText)
+        XCTAssertEqual(service.visibleLines[0].state, .partial)
+        service.stop()
+    }
+
+    func test_fragments_are_translated_together_when_the_sentence_ends() async {
+        var translated: [String] = []
+        let service = CaptionPipelineService(maximumVisibleLines: 4, flushSleep: { _ in try await Task.sleep(for: .seconds(60)) }) { text in
+            translated.append(text)
+            return "en:\(text)"
+        }
+
+        await service.handleTranscript(.init(sourceText: "今日は会議で", state: .final))
+        await service.handleTranscript(.init(sourceText: "新しい案を説明します。", state: .final))
+
+        XCTAssertEqual(translated, ["今日は会議で新しい案を説明します。"])
+        XCTAssertEqual(service.historyLines.map(\.sourceText), ["今日は会議で新しい案を説明します。"])
+        XCTAssertEqual(service.historyLines.map(\.state), [.final])
+        service.stop()
+    }
+
+    func test_each_sentence_in_one_utterance_becomes_its_own_line() async {
+        let service = CaptionPipelineService(maximumVisibleLines: 4, flushSleep: { _ in try await Task.sleep(for: .seconds(60)) }) { text in
+            "t:\(text)"
+        }
+
+        await service.handleTranscript(.init(sourceText: "Let's begin. 始めましょう。それでは", state: .final))
+
+        XCTAssertEqual(service.historyLines.map(\.sourceText), ["Let's begin.", "始めましょう。", "それでは"])
+        XCTAssertEqual(service.historyLines.map(\.translatedText), ["t:Let's begin.", "t:始めましょう。", nil])
+        service.stop()
+    }
+
+    func test_partial_transcript_is_shown_after_held_text() async {
+        let service = CaptionPipelineService(maximumVisibleLines: 4, flushSleep: { _ in try await Task.sleep(for: .seconds(60)) }) { _ in "" }
+
+        await service.handleTranscript(.init(sourceText: "Thank you for", state: .final))
+        await service.handleTranscript(.init(sourceText: "joining", state: .partial))
+
+        XCTAssertEqual(service.visibleLines.map(\.sourceText), ["Thank you for joining"])
+        service.stop()
+    }
+
+    func test_held_text_is_translated_after_a_quiet_period() async {
+        let sleeper = ManualSleeper()
+        var updates = 0
+        let service = CaptionPipelineService(maximumVisibleLines: 4, flushSleep: sleeper.sleep) { text in
+            "en:\(text)"
+        }
+        service.onUpdate = { updates += 1 }
+
+        await service.handleTranscript(.init(sourceText: "それでは", state: .final))
+        await sleeper.waitForSleep()
+        sleeper.wake()
+        for _ in 0..<50 where service.visibleLines.first?.state != .final { await Task.yield() }
+
+        XCTAssertEqual(service.visibleLines.map(\.sourceText), ["それでは"])
+        XCTAssertEqual(service.visibleLines.map(\.translatedText), ["en:それでは"])
+        XCTAssertEqual(service.visibleLines.map(\.state), [.final])
+        XCTAssertEqual(updates, 1)
+    }
+
+    func test_new_transcript_postpones_the_quiet_period_flush() async {
+        let sleeper = ManualSleeper()
+        var translated: [String] = []
+        let service = CaptionPipelineService(maximumVisibleLines: 4, flushSleep: sleeper.sleep) { text in
+            translated.append(text)
+            return text
+        }
+
+        await service.handleTranscript(.init(sourceText: "今日は会議で", state: .final))
+        await sleeper.waitForSleep()
+        await service.handleTranscript(.init(sourceText: "新しい案を", state: .final))
+        sleeper.wake()
+        for _ in 0..<20 { await Task.yield() }
+
+        XCTAssertEqual(translated, [])
+        service.stop()
+    }
+}
+
+@MainActor
+private final class ManualSleeper {
+    private var continuations: [CheckedContinuation<Void, Error>] = []
+
+    var sleep: @MainActor (Duration) async throws -> Void {
+        { [self] _ in
+            try await withCheckedThrowingContinuation { continuations.append($0) }
+            try Task.checkCancellation()
+        }
+    }
+
+    func waitForSleep() async {
+        for _ in 0..<50 where continuations.isEmpty { await Task.yield() }
+    }
+
+    func wake() {
+        let pending = continuations
+        continuations = []
+        pending.forEach { $0.resume() }
     }
 }
