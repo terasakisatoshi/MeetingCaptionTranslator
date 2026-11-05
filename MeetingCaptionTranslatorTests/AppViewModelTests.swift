@@ -366,6 +366,71 @@ final class AppViewModelTests: XCTestCase {
         XCTAssertEqual(store.load().languagePair, .englishToJapanese)
     }
 
+    func test_updateLanguagePair_auto_selectsSpeechWorkerEngine() {
+        let store = makeSettingsStore()
+        let viewModel = AppViewModel(
+            settingsStore: store,
+            captureService: FakeCaptureService(),
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
+        )
+        XCTAssertEqual(viewModel.transcriptionEngine, .apple)
+
+        viewModel.updateLanguagePair(.auto)
+
+        XCTAssertEqual(viewModel.languagePair, .auto)
+        XCTAssertEqual(viewModel.transcriptionEngine, .haas)
+        XCTAssertEqual(store.load().languagePair, .auto)
+        XCTAssertEqual(store.load().transcriptionEngine, .haas)
+    }
+
+    func test_updateTranscriptionEngine_keepsSpeechWorkerEngine_inAutoMode() {
+        let store = makeSettingsStore()
+        let viewModel = AppViewModel(
+            settingsStore: store,
+            captureService: FakeCaptureService(),
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
+        )
+        viewModel.updateLanguagePair(.auto)
+
+        viewModel.updateTranscriptionEngine(.apple)
+
+        XCTAssertEqual(viewModel.transcriptionEngine, .haas)
+        XCTAssertEqual(store.load().transcriptionEngine, .haas)
+    }
+
+    func test_start_inAutoMode_translatesEachUtteranceInItsOwnDirection() async {
+        let captureService = RecordingCaptureService()
+        let transcriptionService = EmittingTranscriptionService()
+        var speechWorkerLanguagePair: CaptionLanguagePair?
+        let viewModel = AppViewModel(
+            settingsStore: makeSettingsStore(),
+            captureService: captureService,
+            transcriptionServiceFactory: { _ in
+                XCTFail("Apple Speech cannot follow a changing language")
+                return RecordingTranscriptionService()
+            },
+            speechWorkerTranscriptionServiceFactory: { languagePair in
+                speechWorkerLanguagePair = languagePair
+                return transcriptionService
+            },
+            translationServiceFactory: { DirectionTaggingTranslationService(pair: $0) },
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
+        )
+        viewModel.updateLanguagePair(.auto)
+
+        viewModel.start()
+        await waitUntil { captureService.didEnterStartCapture }
+        await transcriptionService.emit(TranscriptEvent(sourceText: "Let's get started.", state: .final))
+        await transcriptionService.emit(TranscriptEvent(sourceText: "始めましょう。", state: .final))
+        await waitUntil { viewModel.overlayViewModel.rows.count == 2 }
+
+        XCTAssertEqual(speechWorkerLanguagePair, .auto)
+        XCTAssertEqual(
+            viewModel.overlayViewModel.rows.map(\.translatedText),
+            ["en-ja:Let's get started.", "ja-en:始めましょう。"]
+        )
+    }
+
     func test_initialize_persistsManualOverlayResize() async {
         let overlayWindowManager = FakeOverlayWindowManager()
         let store = makeSettingsStore()
@@ -584,6 +649,22 @@ private final class RecordingTranslationService: AppViewModelTranslationServicin
 
     func translate(_ text: String) async throws -> String {
         text
+    }
+}
+
+@MainActor
+private final class DirectionTaggingTranslationService: AppViewModelTranslationServicing {
+    private let pair: CaptionLanguagePair
+
+    init(pair: CaptionLanguagePair) {
+        self.pair = pair
+    }
+
+    func prepare() async throws {
+    }
+
+    func translate(_ text: String) async throws -> String {
+        "\(pair.id):\(text)"
     }
 }
 

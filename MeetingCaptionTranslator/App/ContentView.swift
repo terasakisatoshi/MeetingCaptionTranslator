@@ -79,7 +79,13 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .disabled(viewModel.appState.isRunning || viewModel.appState == .preparing || viewModel.isPreparingAppleSpeechModel)
+                .disabled(viewModel.languagePair.isAutomatic || viewModel.appState.isRunning || viewModel.appState == .preparing || viewModel.isPreparingAppleSpeechModel)
+
+                if viewModel.languagePair.isAutomatic {
+                    Text("Auto always uses Qwen3-ASR (speech.cpp).")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
 
                 if viewModel.transcriptionEngine == .apple {
                     HStack(spacing: 8) {

@@ -24,10 +24,32 @@ struct CaptionLanguagePair: Codable, Equatable, Sendable, Hashable, Identifiable
         displayTitle: "Japanese -> English"
     )
 
+    // Each utterance is translated in the direction its own text calls for.
+    static let auto = CaptionLanguagePair(
+        sourceLanguage: "auto",
+        targetLanguage: "auto",
+        speechLocaleIdentifier: "en-US",
+        displayTitle: "Auto (EN <-> JA)"
+    )
+
     static let supportedPairs: [CaptionLanguagePair] = [
         .englishToJapanese,
-        .japaneseToEnglish
+        .japaneseToEnglish,
+        .auto
     ]
+
+    var isAutomatic: Bool {
+        sourceLanguage == "auto"
+    }
+
+    // Kana or kanji anywhere marks the text as Japanese: English transcripts do not contain them,
+    // while Japanese ones often carry Latin-script names and terms.
+    static func translationDirection(forSourceText text: String) -> CaptionLanguagePair {
+        let isJapanese = text.unicodeScalars.contains { scalar in
+            (0x3040...0x30FF).contains(scalar.value) || (0x4E00...0x9FFF).contains(scalar.value)
+        }
+        return isJapanese ? .japaneseToEnglish : .englishToJapanese
+    }
 
     static let defaultPair = englishToJapanese
 
