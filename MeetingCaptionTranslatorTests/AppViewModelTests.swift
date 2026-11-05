@@ -431,6 +431,25 @@ final class AppViewModelTests: XCTestCase {
         )
     }
 
+    func test_overlay_shows_lines_the_pipeline_updates_on_its_own() async {
+        let captureService = RecordingCaptureService()
+        let pipeline = UpdatingCaptionPipelineService()
+        let viewModel = AppViewModel(
+            settingsStore: makeSettingsStore(),
+            captureService: captureService,
+            transcriptionServiceFactory: { _ in RecordingTranscriptionService() },
+            translationServiceFactory: { _ in RecordingTranslationService() },
+            captionPipelineServiceFactory: { _, _ in pipeline },
+            overlayWindowManagerFactory: { _, _ in FakeOverlayWindowManager() }
+        )
+
+        viewModel.start()
+        await waitUntil { captureService.didEnterStartCapture }
+        pipeline.publish(CaptionLine(id: UUID(), sourceText: "それでは", translatedText: "Well then", state: .final, createdAt: .now))
+
+        XCTAssertEqual(viewModel.overlayViewModel.rows.map(\.translatedText), ["Well then"])
+    }
+
     func test_initialize_persistsManualOverlayResize() async {
         let overlayWindowManager = FakeOverlayWindowManager()
         let store = makeSettingsStore()
@@ -665,6 +684,29 @@ private final class DirectionTaggingTranslationService: AppViewModelTranslationS
 
     func translate(_ text: String) async throws -> String {
         "\(pair.id):\(text)"
+    }
+}
+
+@MainActor
+private final class UpdatingCaptionPipelineService: AppViewModelCaptionPipelineServicing {
+    private(set) var visibleLines: [CaptionLine] = []
+    private(set) var historyLines: [CaptionLine] = []
+    let appState: AppState = .transcribing
+    var onUpdate: (@MainActor () -> Void)?
+
+    func publish(_ line: CaptionLine) {
+        visibleLines.append(line)
+        historyLines.append(line)
+        onUpdate?()
+    }
+
+    func handleTranscript(_ event: TranscriptEvent) async {
+    }
+
+    func stop() {
+    }
+
+    func updateMaximumVisibleLines(_ maximumVisibleLines: Int) {
     }
 }
 

@@ -29,7 +29,7 @@ struct HaasSegmenter {
             }
             if active {
                 utterance.append(contentsOf: block)
-                if silence >= sampleRate * 7 / 10 || utterance.count >= sampleRate * 12 {
+                if silence >= sampleRate / 2 || utterance.count >= sampleRate * 12 {
                     result.append(utterance)
                     utterance.removeAll(keepingCapacity: true)
                     silence = 0

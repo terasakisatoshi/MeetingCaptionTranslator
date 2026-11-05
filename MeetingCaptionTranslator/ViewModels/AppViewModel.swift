@@ -23,6 +23,7 @@ protocol AppViewModelCaptionPipelineServicing: AnyObject {
     var visibleLines: [CaptionLine] { get }
     var historyLines: [CaptionLine] { get }
     var appState: AppState { get }
+    var onUpdate: (@MainActor () -> Void)? { get set }
     func handleTranscript(_ event: TranscriptEvent) async
     func stop()
     func updateMaximumVisibleLines(_ maximumVisibleLines: Int)
@@ -86,6 +87,11 @@ private final class CaptionPipelineServiceAdapter: AppViewModelCaptionPipelineSe
 
     var appState: AppState {
         service.appState
+    }
+
+    var onUpdate: (@MainActor () -> Void)? {
+        get { service.onUpdate }
+        set { service.onUpdate = newValue }
     }
 
     func handleTranscript(_ event: TranscriptEvent) async {
@@ -416,6 +422,9 @@ final class AppViewModel: ObservableObject {
                     try await translationService.translate(text)
                 }
             )
+            captionPipelineService?.onUpdate = { [weak self] in
+                self?.renderPipelineLines(token: token)
+            }
 
             let diagnosticsReporter = CapturedFrameDiagnosticsReporter(
                 viewModel: self,
@@ -543,7 +552,11 @@ final class AppViewModel: ObservableObject {
 
         recordTranscriptEvent(event)
         await captionPipelineService.handleTranscript(event)
-        guard isCurrent(token: token) else {
+        renderPipelineLines(token: token)
+    }
+
+    private func renderPipelineLines(token: Int) {
+        guard isCurrent(token: token), let captionPipelineService else {
             return
         }
 
